@@ -1,6 +1,3 @@
-alexapy
-data
-loxberry-music-server-gateway
-MS4H
+config/unifi.json
+
 node_modules
-alexa_romte.sh
