@@ -42,7 +42,9 @@ module.exports = class UniFi {
 
       this.cookieParser.parseAndAdd(response.headers['set-cookie']);
       this.cookieParser.save();
+
       fs.writeFileSync(this.userFile, JSON.stringify(response.data));
+
       return true;
     } catch {
       this.cookieParser.reset();

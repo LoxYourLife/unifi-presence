@@ -1,7 +1,6 @@
-config/unifi.json
 
 node_modules
 loxberry
 
 data/unifi.*
-config/unifi.json
+#config/unifi.json
