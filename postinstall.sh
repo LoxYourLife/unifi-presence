@@ -25,6 +25,6 @@
 # <FAIL> This is a fail!"
 
 cd $3
-npm ci
+npm ci --only=production
 
 exit 0;

@@ -6,7 +6,12 @@
   "repository": "github:LoxYourLife/unifi-presence.git",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon -w bin index.js",
+    "dev:login": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev login",
+    "dev:clients": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev clients",
+    "dev:eventsc": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev events",
+    "login": "node bin/index.js login",
+    "clients": "node bin/index.js clients",
+    "events": "node bin/index.js events",
     "lint": "eslint bin",
     "prettify": "prettier --write bin"
   },
@@ -15,6 +20,11 @@
   "config": {
     "eslint": "--ignore-path .gitignore --cache --format=codeframe --max-warnings=0 \"{src,scripts,tests,.github}/**/*.{js,md,html}\" \"*.{js,md,html}\" \".*.{js,md,html}\"",
     "prettier": "--ignore-path .gitignore --loglevel=warn \"{src,scripts,tests,.github}/**/*.{js,md,yml,json,html}\" \"*.{js,yml,json,html}\" \".*.{js,yml,json,html}\" \"!package-lock.json\""
+  },
+  "dependencies": {
+    "axios": "0.23.0",
+    "lodash": "4.17.21",
+    "ws": "8.2.3"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
