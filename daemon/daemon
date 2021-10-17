@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PLUGINNAME=REPLACELBPPLUGINDIR
 PATH="/sbin:/bin:/usr/sbin:/usr/bin:$LBHOMEDIR/bin:$LBHOMEDIR/sbin"
 
