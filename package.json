@@ -6,9 +6,9 @@
   "repository": "github:LoxYourLife/unifi-presence.git",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:login": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev login",
-    "dev:clients": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev clients",
-    "dev:eventsc": "LBHOMEDIR=/Users/scyks/projects/unifi-presence/loxberry nodemon -w bin bin/index.js --dev events",
+    "dev:login": "LBHOMEDIR=$(pwd)/loxberry nodemon -w bin bin/index.js --dev login",
+    "dev:clients": "LBHOMEDIR=$(pwd)/loxberry nodemon -w bin bin/index.js --dev clients",
+    "dev:eventsc": "LBHOMEDIR=%(pwd)/loxberry nodemon -w bin bin/index.js --dev events",
     "login": "node bin/index.js login",
     "clients": "node bin/index.js clients",
     "events": "node bin/index.js events",

@@ -24,7 +24,7 @@
 # <ERROR> This is an error!"
 # <FAIL> This is a fail!"
 
-cd $3
+cd $LBPBIN
 npm ci --only=production
 
 exit 0;

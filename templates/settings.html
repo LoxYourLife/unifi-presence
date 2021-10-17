@@ -1,69 +1,110 @@
-<TMPL_IF FORM_SETTINGS>
-	<!-- Form SETTINGS -->
-	<form id="form" onsubmit="return false;">
+<style>
+    .lb_flex-item 
+	{	
+		min-width	:450px;
+		width		:450px;
+		max-width	:450px;
+		flex-wrap	:nowrap;
+		margin-top: -10px;  
+	}
+</style>
+<TMPL_IF MQTTGATEWAY_INSTALLED>
+    <TMPL_IF FORM_SETTINGS>
+        <!-- Form SETTINGS -->
+        <form id="form" onsubmit="return false;">
 
-        <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
-        <br>
+            <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
+            <br>
 
-        <div data-role="fieldcontain" class="main_ipaddress_block">
-            <label for="Main.ipaddress"><TMPL_VAR UNIFI.IP></label>
-            <input name="Main.ipaddress" id="Main.ipaddress" type="text" />
-            <p class="hint"><TMPL_VAR UNIFI.IP_HINT></TMPL_VAR></p>
-        </div>
-        <div data-role="fieldcontain" class="main_username_block">
-            <label for="Main.username"><TMPL_VAR UNIFI.USERNAME></label>
-            <input name="Main.username" id="Main.username" type="text" />
-        </div>
-        <div data-role="fieldcontain" class="main_password_block">
-            <label for="Main.password"><TMPL_VAR UNIFI.PASSWORD></label>
-            <input name="Main.password" id="Main.password" type="password" />
-            <p class="hint"><TMPL_VAR UNIFI.LOGIN_HINT></TMPL_VAR></p>
-        </div>
-    </form>
+            <div data-role="fieldcontain" class="main_ipaddress_block">
+                <label for="Main.ipaddress"><TMPL_VAR UNIFI.IP></label>
+                <input name="Main.ipaddress" id="Main.ipaddress" type="text" />
+                <p class="hint"><TMPL_VAR UNIFI.IP_HINT></p>
+            </div>
+            <div data-role="fieldcontain" class="main_username_block">
+                <label for="Main.username"><TMPL_VAR UNIFI.USERNAME></label>
+                <input name="Main.username" id="Main.username" type="text" />
+            </div>
+            <div data-role="fieldcontain" class="main_password_block">
+                <label for="Main.password"><TMPL_VAR UNIFI.PASSWORD></label>
+                <input name="Main.password" id="Main.password" type="password" />
+                <p class="hint"><TMPL_VAR UNIFI.LOGIN_HINT></p>
+            </div>
+
+            
+            <div class="lb_flex-container Main">
+			    <div class="lb_flex-item-label">
+			</div>
+			<div class="lb_flex-item-spacer"></div>
+			<div class="lb_flex-item">
+			    <a href="javascript:saveUnifi();" id="btnsavemqtt" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check" 
+						data-transition="flow"><TMPL_VAR COMMON.SAVE_BTN></a>
+			    <div class="hint" id="unifi_hint">&nbsp;</div>
+			</div>
+			<div class="lb_flex-item-spacer"></div>
+			<div class="lb_flex-item-help hint"></div>
+			<div class="lb_flex-item-spacer"></div>
+		</div>
+        </form>
+    </TMPL_IF>
+<TMPL_ELSE>
+    <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
+    <h4><TMPL_VAR UNIFI.NEED_MQTT></h4>
+    
 </TMPL_IF>
 
-<TMPL_UNLESS FORM_DISABLE_BUTTONS>
 
-	<div style="display:flex;align-items:center;justify-content:center;">
-	    <button class="ui-btn ui-btn-icon-right" id="saveapply" data-inline="true">Save and Apply</button>
-	    <button class="ui-btn ui-btn-icon-right" id="restartmqttgateway" data-inline="true">Restart</button>
-	</div>
-	<div style="display:flex;align-items:center;justify-content:center;">
-		<span id="savemessages"></span>&nbsp;
-	</div>
+<script>
+    var cfg;
+    var creds = { };
+    var creds_changed = false;
 
-</TMPL_UNLESS>
+    $(function() {
 
-<TMPL_UNLESS FORM_DISABLE_JS>
-    <script>
-        var cfg;
-        var creds = { };
-        var creds_changed = false;
+        // Parse config
+        cfgstr = '<TMPL_VAR JSONCONFIG>';
+        if (cfgstr) cfg = JSON.parse(cfgstr);
 
-        $(function() {
-
-            // Parse config
-            cfgstr = '<TMPL_VAR JSONCONFIG>';
-            if (cfgstr) cfg = JSON.parse(cfgstr);
-
-            // Elements in Main
-            for(var elemname in cfg) {
-                var inputType = $("#Main\\."+elemname).attr('type');
-                if ( !inputType ) 
-                    inputType = $("[name='Main\\."+elemname+"']").attr('type');
-                
-                // console.log("Element", elemname, cfg.Main[elemname], inputType);
-                if(inputType == "checkbox") {
-                    if( cfg.Main[elemname] == 1) 
-                        $("#Main\\."+elemname).prop('checked', true);
-                } 
-                else if (inputType == "radio") {
-                    $('input:radio[name="Main.'+elemname+'"]').filter('[value="'+cfg.Main[elemname]+'"]').attr("checked",true).checkboxradio("refresh");
-                }
-                else {
-                    $("#Main\\."+elemname).val(cfg.Main[elemname]);
-                }
+        // Elements in Main
+        for(var elemname in cfg) {
+            var inputType = $("#Main\\."+elemname).attr('type');
+            if ( !inputType ) {
+                inputType = $("[name='Main\\."+elemname+"']").attr('type');
             }
-        });
-    </script>
-</TMPL_UNLESS>
+            $("#Main\\."+elemname).val(cfg[elemname]);
+            
+        }
+    });
+
+// Save Unifi Settings
+function saveUnifi() {
+	$("#unifi_hint").attr("style", "color:blue").html("<TMPL_VAR COMMON.HINT_SAVE_SAVING>");
+	console.log ("Saving", $('#Main\\.ipaddress').val(), $('#Main\\.username').val(), $('#Main\\.password').val());
+	$.ajax( { 
+			type: 'POST',
+			data: { 
+				ajax: 'savesettings',
+                ipaddress: $('#Main\\.ipaddress').val(),
+                username: $('#Main\\.username').val(),
+                password: $('#Main\\.password').val()
+			}
+		} )
+	.fail(function( data ) {
+		console.log( "saving failed", data );
+		$("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: "+data.error);
+	})
+	.done(function( data ) {
+        if(null === data.error) {
+		    console.log( "save Success: ", data );
+		    $("#unifi_hint").attr("style", "color:green").html("<TMPL_VAR COMMON.HINT_SAVE_OK>");
+        } else {
+            console.log( "saving failed", data );
+		    $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: "+data.error);
+        }
+	})
+	.always(function( data ) {
+		console.log( "save Finished" );
+	});
+}
+</script>
+    

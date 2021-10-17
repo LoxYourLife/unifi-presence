@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
 use LoxBerry::System;
+use LoxBerry::Log;
+use LoxBerry::JSON;
 use CGI;
 
 my $cfgfile = "$lbpconfigdir/unifi.json";
@@ -13,6 +15,18 @@ my %pids;
 my $template;
 
 if( $q->{ajax} ) {
+
+	my %response;
+	ajax_header();
+
+	# Save Unifi Connection Settings
+	if( $q->{ajax} eq "savesettings" ) {
+		LOGINF "P$$ savesettings: savesettings was called.";
+		$response{error} = &savemain();
+		print JSON->new->canonical(1)->encode(\%response);
+	}
+
+	exit;
 } else {
     require LoxBerry::Web;
 	
@@ -26,6 +40,7 @@ if( $q->{ajax} ) {
 		loop_context_vars => 1,
 		die_on_bad_params => 0,
 	);
+	%L = LoxBerry::System::readlanguage($template, "language.ini");
 
     my $cfgfilecontent = LoxBerry::System::read_file($cfgfile);
 	$cfgfilecontent = jsescape($cfgfilecontent);
@@ -47,7 +62,7 @@ exit;
 ######################################################################
 sub print_form
 {
-	my $plugintitle = "UniFi Presence" . LoxBerry::System::pluginversion();
+	my $plugintitle = "UniFi Presence " . LoxBerry::System::pluginversion();
 	my $helplink = "https://www.loxwiki.eu/x/S4ZYAg";
 	my $helptemplate = "help.html";
 	
@@ -75,7 +90,65 @@ sub print_form
 sub settings_form
 {
 
+	my $mqttplugindata = LoxBerry::System::plugindata("mqttgateway");
+	$template->param("MQTTGATEWAY_INSTALLED", 1) if ( $mqttplugindata );
 	#my $mslist_select_html = LoxBerry::Web::mslist_select_html( FORMID => 'Main.msno', LABEL => 'Receiving Miniserver', DATA_MINI => "0" );
 	#$template->param('mslist_select_html', $mslist_select_html);
 
+}
+
+#################################################################################
+# Escape a json string for JavaScript code
+#################################################################################
+sub jsescape
+{
+	my ($stringToEscape) = shift;
+		
+	my $resultjs;
+	
+	if($stringToEscape) {
+		my %translations = (
+		"\r" => "\\r",
+		"\n" => "\\n",
+		"'"  => "\\'",
+		"\\" => "\\\\",
+		);
+		my $meta_chars_class = join '', map quotemeta, keys %translations;
+		my $meta_chars_re = qr/([$meta_chars_class])/;
+		$stringToEscape =~ s/$meta_chars_re/$translations{$1}/g;
+	}
+	return $stringToEscape;
+}
+
+sub savemain
+{
+	my $errors;
+	$jsonobj = LoxBerry::JSON->new();
+	$cfg = $jsonobj->open(filename => $cfgfile);
+
+	$cfg->{ipaddress} = $q->{ipaddress};
+	$cfg->{username} = $q->{username};
+	$cfg->{password} = $q->{password};
+
+	# Write
+	$jsonobj->write();
+	$loginSuccessful = `node $lbpbindir/index.js login`;
+	$loginSuccessful =~ s/\015?\012?$//;
+	LOGINF "UniFi Login: '$loginSuccessful'" ;
+	
+	if ($loginSuccessful eq false) {
+		LOGINF "UniFi Login: Error";
+		$errors = 'UniFi Login failed';
+	}
+
+	return ($errors);
+}
+
+sub ajax_header
+{
+	print $cgi->header(
+			-type => 'application/json',
+			-charset => 'utf-8',
+			-status => '200 OK',
+	);	
 }
