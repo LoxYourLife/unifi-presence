@@ -65,12 +65,16 @@ module.exports = class UniFi {
   }
 
   async getActiveClients() {
-    const activeUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/active`;
-    const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() } });
-    const historyUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24`;
-    const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
+    try {
+      const activeUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/active`;
+      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const historyUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24`;
+      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
 
-    return [...activeResponse.data, ...historyResponse.data].map(convertClient);
+      return [...activeResponse.data, ...historyResponse.data].map(convertClient);
+    } catch (e) {
+      return [];
+    }
   }
 
   async openClientEvents(watchedClients) {

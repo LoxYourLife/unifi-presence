@@ -1,20 +1,25 @@
+const _ = require('lodash');
 const UniFi = require('./lib/Unifi');
 const path = require('path');
 const Mqtt = require('./lib/Mqtt');
+const { symlinkSync } = require('fs');
+const { setUncaughtExceptionCaptureCallback } = require('process');
 
 const PRODUCTION = !process.argv.includes('--dev');
 const directories = PRODUCTION
   ? {
       config: 'REPLACELBPCONFIGDIR',
-      data: 'REPLACELBPDATADIR'
+      data: 'REPLACELBPDATADIR',
+      homedir: process.env.LBHOMEDIR
     }
   : {
       config: path.join(__dirname, '../config'),
-      data: path.join(__dirname, '../data')
+      data: path.join(__dirname, '../data'),
+      homedir: path.join(__dirname, '../loxberry')
     };
 
 const config = require(`${directories.config}/unifi.json`);
-const globalConfig = require(`${process.env.LBHOMEDIR}/config/system/general.json`);
+const globalConfig = require(`${directories.homedir}/config/system/general.json`);
 
 const mqtt = new Mqtt(globalConfig);
 const uniFi = new UniFi({ config, directories, mqtt });
@@ -43,6 +48,15 @@ const getClients = () => {
   });
 };
 
+const isEmptyUser = _.isNil(config.username) || _.isEmpty(config.username);
+const isEmptyPassword = _.isNil(config.password) || _.isEmpty(config.password);
+const isEmptyIp = _.isNil(config.ipaddress) || _.isEmpty(config.ipaddress);
+
+if (isEmptyIp || isEmptyPassword || isEmptyUser) {
+  console.log('please configure the app first');
+  process.exit(20);
+}
+
 if (process.argv.includes('clients')) {
   getClients();
 } else if (process.argv.includes('login')) {
@@ -59,4 +73,5 @@ if (process.argv.includes('clients')) {
   console.log('  clients: fetches all active clients');
   console.log('  login: tries to login');
   console.log('  events: listens to UniFi events and forwards relvant data to MQTT');
+  process.exit(21);
 }

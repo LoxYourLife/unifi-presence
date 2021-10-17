@@ -30,6 +30,8 @@ if( $q->{ajax} ) {
 			$clientsString = `node $lbpbindir/index.js clients`;
 			$clients = $jsonobj->parse($clientsString);
 			$response{clients} = $clients;
+
+			system("npm --prefix $lbpbindir run restart");
 		}
 		print JSON->new->canonical(1)->encode(\%response);
 	} 
@@ -37,6 +39,7 @@ if( $q->{ajax} ) {
 	if($q->{ajax} eq "saveclients") {
 		LOGINF "P$$ saveclients: savesettings was called.";
 		$response{error} = &saveclients();
+		system("npm --prefix $lbpbindir run restart");
 		print JSON->new->canonical(1)->encode(\%response);
 	}
 

@@ -24,7 +24,12 @@
 # <ERROR> This is an error!"
 # <FAIL> This is a fail!"
 
-cd $LBPBIN
-npm ci --only=production
+PLUGINNAME=REPLACELBPPLUGINDIR
+PATH="/sbin:/bin:/usr/sbin:/usr/bin:$LBHOMEDIR/bin:$LBHOMEDIR/sbin"
 
+ENVIRONMENT=$(cat /etc/environment)
+export $ENVIRONMENT
+
+
+npm --prefix $LBHOMEDIR/bin/plugins/${PLUGINNAME} ci --only=production
 exit 0;

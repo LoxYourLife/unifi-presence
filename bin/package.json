@@ -7,12 +7,16 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "pm2 start unifi.config.js",
+    "stop": "pm2 stop unifi.config.js",
+    "restart": "pm2 restart unifi.config.js"
   },
   "dependencies": {
     "axios": "0.23.0",
     "lodash": "4.17.21",
-    "ws": "8.2.3"
+    "ws": "8.2.3",
+    "pm2": "5.1.2"
   },
   "author": "",
   "license": "ISC"
