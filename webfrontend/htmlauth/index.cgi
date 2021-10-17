@@ -23,6 +23,20 @@ if( $q->{ajax} ) {
 	if( $q->{ajax} eq "savesettings" ) {
 		LOGINF "P$$ savesettings: savesettings was called.";
 		$response{error} = &savemain();
+		
+		if(not defined $response{error}) {
+			LOGINF "Fetching client list";
+			$jsonobj = LoxBerry::JSON->new();
+			$clientsString = `node $lbpbindir/index.js clients`;
+			$clients = $jsonobj->parse($clientsString);
+			$response{clients} = $clients;
+		}
+		print JSON->new->canonical(1)->encode(\%response);
+	} 
+
+	if($q->{ajax} eq "saveclients") {
+		LOGINF "P$$ saveclients: savesettings was called.";
+		$response{error} = &saveclients();
 		print JSON->new->canonical(1)->encode(\%response);
 	}
 
@@ -45,6 +59,10 @@ if( $q->{ajax} ) {
     my $cfgfilecontent = LoxBerry::System::read_file($cfgfile);
 	$cfgfilecontent = jsescape($cfgfilecontent);
 	$template->param('JSONCONFIG', $cfgfilecontent);
+
+	$jsonobj = LoxBerry::JSON->new();
+	$clients = `node $lbpbindir/index.js clients`;
+	$template->param('CLIENTS', jsescape($clients));
 
     if( !$q->{form} or $q->{form} eq "settings" ) {
 		$navbar{10}{active} = 1;
@@ -70,11 +88,8 @@ sub print_form
 	$navbar{10}{Name} = "Settings";
 	$navbar{10}{URL} = 'index.cgi';
  
- 	$navbar{20}{Name} = "Clients";
-	$navbar{20}{URL} = 'index.cgi?form=clients';
- 
-	$navbar{30}{Name} = "Logs";
-	$navbar{30}{URL} = 'index.cgi?form=logs';
+ 	$navbar{20}{Name} = "Logs";
+	$navbar{20}{URL} = 'index.cgi?form=logs';
 		
 	LoxBerry::Web::lbheader($plugintitle, $helplink, $helptemplate);
 
@@ -141,6 +156,25 @@ sub savemain
 		$errors = 'UniFi Login failed';
 	}
 
+	return ($errors);
+}
+
+sub saveclients
+{
+	my $errors;
+	$jsonobj = LoxBerry::JSON->new();
+	$cfg = $jsonobj->open(filename => $cfgfile);
+
+	$clients = LoxBerry::JSON->new();
+	$parsedClients = $clients->parse($q->{clients});
+	
+	$cfg->{clients} = $parsedClients;
+	LOGINF $parsedClients;
+	
+
+	# Write
+	$jsonobj->write();
+	
 	return ($errors);
 }
 
