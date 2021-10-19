@@ -12,8 +12,12 @@ const convertClient = (client) => ({
   userId: client.user_id,
   ip: client.ip,
   experience: client.wifi_experience_score,
-  ssid: client.essid,
-  channel: client.channel
+  ssid: client.essid
+});
+
+const convertDevice = (device) => ({
+  name: device.name,
+  mac: device.mac
 });
 
 module.exports = class UniFi {
@@ -29,6 +33,8 @@ module.exports = class UniFi {
         rejectUnauthorized: false
       })
     });
+
+    this.devices = null;
   }
 
   async login() {
@@ -77,6 +83,29 @@ module.exports = class UniFi {
     }
   }
 
+  async getDevices() {
+    try {
+      const deviceUrl = `https://${this.config.ipaddress}/proxy/network/api/s/default/stat/device`;
+      const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      this.devices = response.data.data.map(convertDevice);
+      return this.devices;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getAccessPoint(mac) {
+    if (this.devices === null) await this.getDevices();
+
+    let device = _.find(this.devices, (d) => d.mac === mac);
+    if (_.isNil(device)) {
+      await this.getDevices();
+      device = _.find(this.devices, (d) => d.mac === mac);
+    }
+
+    return device;
+  }
+
   async openClientEvents(watchedClients) {
     const url = `wss://${this.config.ipaddress}/proxy/network/wss/s/default/events?clients=v2`;
 
@@ -111,18 +140,19 @@ module.exports = class UniFi {
         case 'events':
           return this.eventMessage(clients, relevantDevices);
         default:
+          console.log('unhadled event', event);
           return;
       }
     };
   }
 
   syncMessage(clients, relevantDevices) {
-    relevantDevices.forEach((event) => {
+    relevantDevices.forEach(async (event) => {
       const client = clients.get(event.mac);
       const cloned = _.clone(client);
 
+      client.ap = await this.getAccessPoint(event.ap_mac);
       client.ssid = event.essid;
-      client.channel = event.channel;
       client.ip = event.ip;
       client.experience = event.wifi_experience_score;
       client.connected = !client.connected ? true : client.connected;
@@ -132,20 +162,20 @@ module.exports = class UniFi {
   }
 
   eventMessage(clients, relevantDevices) {
-    relevantDevices.forEach((event) => {
+    relevantDevices.forEach(async (event) => {
       const client = clients.get(event.user);
-
-      const ssid = client.ssid;
-      const connected = client.connected;
+      const cloned = _.clone(client);
 
       client.ssid = event.ssid;
-      if (event.key === 'EVT_WU_Connected' && !client.connected) {
+      client.ap = await this.getAccessPoint(event.ap);
+
+      if (event.key === 'EVT_WU_Connected') {
         client.connected = true;
-      } else if (event.key === 'EVT_WU_Disconnected' && client.connected) {
+      } else if (event.key === 'EVT_WU_Disconnected') {
         client.connected = false;
       }
 
-      if (client.connected !== connected || ssid !== client.ssid) this.send(client);
+      if (!_.isEqual(client, cloned)) this.send(client);
     });
   }
 
