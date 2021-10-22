@@ -181,6 +181,6 @@ module.exports = class UniFi {
 
   send(client) {
     const name = client.name.replace(/[^a-z0-9]+/gi, '-');
-    this.mqtt.send(`UniFi/clients/${name}`, JSON.stringify(client));
+    this.mqtt.send(`${this.config.topic}/${name}`, JSON.stringify(client));
   }
 };

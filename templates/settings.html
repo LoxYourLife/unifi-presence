@@ -1,4 +1,7 @@
 <style>
+    .hint {
+        margin-left: 22%;
+    }
     .lb_flex-item 
 	{	
 		min-width	:450px;
@@ -7,6 +10,10 @@
 		flex-wrap	:nowrap;
 		margin: -10px 0 0 -10px;  
 	}
+    .lb_flex-item-label {
+        width: 22%;
+        min-width: 22%;
+    }
 
     .client-table {
 		/* font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; */
@@ -42,23 +49,28 @@
 <TMPL_IF MQTTGATEWAY_INSTALLED>
     <TMPL_IF FORM_SETTINGS>
         <!-- Form SETTINGS -->
-        <form id="form" onsubmit="return false;">
+        <form id="form" onsubmit="saveUnifi()">
 
             <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
             <br>
 
+            <div data-role="fieldcontain" class="main_topic_block">
+                <label for="Main_topic"><TMPL_VAR UNIFI.TOPIC></label>
+                <input name="Main_topic" id="Main_topic" type="text" data-validation-error="<TMPL_VAR VALIDATION.TOPIC_ERROR>" data-validation-rule="^[\w]+((\/[\w]+)+)?$">
+                <p class="hint"><TMPL_VAR UNIFI.TOPIC_HINT></p>
+            </div>
             <div data-role="fieldcontain" class="main_ipaddress_block">
-                <label for="Main.ipaddress"><TMPL_VAR UNIFI.IP></label>
-                <input name="Main.ipaddress" id="Main.ipaddress" type="text" />
+                <label for="Main_ipaddress"><TMPL_VAR UNIFI.IP></label>
+                <input name="Main_ipaddress" id="Main_ipaddress" type="text" data-validation-error="ERR" data-validation-rule="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" />
                 <p class="hint"><TMPL_VAR UNIFI.IP_HINT></p>
             </div>
             <div data-role="fieldcontain" class="main_username_block">
-                <label for="Main.username"><TMPL_VAR UNIFI.USERNAME></label>
-                <input name="Main.username" id="Main.username" type="text" />
+                <label for="Main_username"><TMPL_VAR UNIFI.USERNAME></label>
+                <input name="Main_username" id="Main_username" type="text" />
             </div>
             <div data-role="fieldcontain" class="main_password_block">
-                <label for="Main.password"><TMPL_VAR UNIFI.PASSWORD></label>
-                <input name="Main.password" id="Main.password" type="password" />
+                <label for="Main_password"><TMPL_VAR UNIFI.PASSWORD></label>
+                <input name="Main_password" id="Main_password" type="password" />
                 <p class="hint"><TMPL_VAR UNIFI.LOGIN_HINT></p>
             </div>
 
@@ -66,14 +78,14 @@
             <div class="lb_flex-container Main">
 			    <div class="lb_flex-item-label">&nbsp;</div>
                 <div class="lb_flex-item-spacer"></div>
-			<div class="lb_flex-item">
-			    <a href="javascript:saveUnifi();" id="btnsavemqtt" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check" 
-						data-transition="flow"><TMPL_VAR COMMON.SAVE_BTN></a>
-			    <div class="hint" id="unifi_hint">&nbsp;</div>
-			</div>
-			<div class="lb_flex-item-spacer"></div>
-			<div class="lb_flex-item-help hint"></div>
-			<div class="lb_flex-item-spacer"></div>
+                <div class="lb_flex-item">
+                    <a href="javascript:saveUnifi();" id="btnsavemqtt" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check" 
+                            data-transition="flow"><TMPL_VAR COMMON.SAVE_BTN></a>
+                    <div class="hint" id="unifi_hint">&nbsp;</div>
+                </div>
+                <div class="lb_flex-item-spacer"></div>
+                <div class="lb_flex-item-help hint"></div>
+                <div class="lb_flex-item-spacer"></div>
 			</div>
 			
 		
@@ -120,6 +132,10 @@ let allClients = [];
 
 $(function() {
 
+
+    validate_enable('#Main_topic');
+    validate_enable('#Main_ipaddress');
+
     // Parse config
     cfgstr = '<TMPL_VAR JSONCONFIG>';
     if (cfgstr) cfg = JSON.parse(cfgstr);
@@ -130,8 +146,8 @@ $(function() {
     existingClients = cfg.clients.map(client => client.mac);
     // Elements in Main
     for(var elemname in cfg) {
-        var inputType = $("#Main\\."+elemname).attr('type');
-        $("#Main\\."+elemname).val(cfg[elemname]);
+        var inputType = $("#Main_"+elemname).attr('type');
+        $("#Main_"+elemname).val(cfg[elemname]);
     }
 
     let clients = '<TMPL_VAR CLIENTS>';
@@ -160,7 +176,12 @@ function renderClients() {
     allClients.forEach(client => {
         const selected = existingClients.includes(client.mac);
         const row = `<tr>
-            <td><input onChange="clientSelection('${client.mac}')" type="checkbox" value="1" ${selected ? 'checked' : ''} name="${client.mac}" /></td>
+            <td>
+                <select onchange="clientSelection('${client.mac}')" id="${client.mac.replaceAll(':', '')}" name="${client.mac.replaceAll(':', '')}" data-role="flipswitch">
+                    <option ${selected ? '': 'selected="selected"'} value="0">Aus</option>
+                    <option value="1" ${selected ? 'selected="selected"' : ''}">Ein</option>
+                </select>
+            </td>
             <td class="client-table--data">${client.name}</td>
             <td class="">${client.mac}</td>
             <td class="">${client.ip || ''}</td>
@@ -169,7 +190,10 @@ function renderClients() {
             <td class="">${client.type}</td>
             </tr>`;
         $('#clientList table tbody').append(row);
+        $(`select[name=${client.mac.replaceAll(':', '')}]`).flipswitch();
+        
     });
+
 }
 
 function clientSelection(mac) {
@@ -196,15 +220,28 @@ function clientSelection(mac) {
 
 // Save Unifi Settings
 function saveUnifi() {
+
+    const topic = $('#Main_topic'); 
+    const ipAddress = $('#Main_ipaddress');
+    const username = $('#Main_username');
+    const password = $('#Main_password');
+
+    const topicValid = new RegExp(topic.data('validation-rule')).test(topic.val());
+    const ipValid = new RegExp(ipAddress.data('validation-rule')).test(ipAddress.val());
+
+    if (!topicValid || !ipValid) return false;
+
 	$("#unifi_hint").attr("style", "color:blue").html("<TMPL_VAR COMMON.HINT_SAVE_SAVING>");
-	console.log ("Saving", $('#Main\\.ipaddress').val(), $('#Main\\.username').val());
+	console.log ("Saving",ipAddress.val(), username.val(), topic.val());
+    
 	$.ajax( { 
 			type: 'POST',
 			data: { 
 				ajax: 'savesettings',
-                ipaddress: $('#Main\\.ipaddress').val(),
-                username: $('#Main\\.username').val(),
-                password: $('#Main\\.password').val()
+                topic: topic.val(),
+                ipaddress: ipAddress.val(),
+                username: username.val(),
+                password: password.val()
 			}
 		} )
 	.fail(function( data ) {

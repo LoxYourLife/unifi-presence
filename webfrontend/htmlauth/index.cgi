@@ -147,6 +147,7 @@ sub savemain
 	$cfg->{ipaddress} = $q->{ipaddress};
 	$cfg->{username} = $q->{username};
 	$cfg->{password} = $q->{password};
+	$cfg->{topic} = $q->{topic};
 
 	# Write
 	$jsonobj->write();
