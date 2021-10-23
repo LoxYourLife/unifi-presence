@@ -81,6 +81,17 @@ module.exports = class UniFi {
     }
   }
 
+  async getVersion() {
+    const url = `https://${this.config.ipaddress}/proxy/network/api/s/default/stat/sysinfo`;
+    try {
+      const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
+      return _.get(response, 'data.data.0.version', 0);
+    } catch (e) {
+      console.log(e.response);
+      return 0;
+    }
+  }
+
   async getActiveClients() {
     try {
       const activeUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/active`;
@@ -89,7 +100,7 @@ module.exports = class UniFi {
       const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
 
       return [...activeResponse.data, ...historyResponse.data].map(convertClient);
-    } catch (e) {
+    } catch {
       return [];
     }
   }

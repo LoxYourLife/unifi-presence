@@ -45,6 +45,9 @@
     #clientList {
         display: none;
     }
+    #versionIssue, #noClients {
+        color: red;
+    }
 </style>
 <TMPL_IF MQTTGATEWAY_INSTALLED>
     <TMPL_IF FORM_SETTINGS>
@@ -98,6 +101,9 @@
 
             <div id="noClients">
                 <h4><TMPL_VAR UNIFI.NO_CLIENTS></h4>
+            </div>
+            <div id="versionIssue">
+                <h4><TMPL_VAR COMMON.VERSION_ERROR> <TMPL_VAR UNIFI_VERSION></h4>
             </div>
             <div id="clientList">
                 <p><TMPL_VAR UNIFI.CLIENT_SELECTION></p>
@@ -153,6 +159,15 @@ $(function() {
         var inputType = $("#Main_"+elemname).attr('type');
         $("#Main_"+elemname).val(cfg[elemname]);
     }
+
+    const unifiVersion = '<TMPL_VAR UNIFI_VERSION>';
+    
+    if (unifiVersion && unifiVersion < '6.4.54') {
+        $('#noClients').css('display', 'none');
+    } else {
+        $('#versionIssue').css('display', 'none');
+    }
+
 
     let clients = '<TMPL_VAR CLIENTS>';
     if (clients) {
@@ -267,13 +282,16 @@ function saveUnifi() {
             twoFa.css('display', 'block');
             $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_2FA>:");
             return;
+        } else if (data.error === 'version') {
+            $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.VERSION_ERROR>: " + data.version);
+            return;
         } else {
             console.log( "saving failed", data );
-		    $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: "+data.error);
+		    $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: " + data.error);
         }
 
         if(data.clients) {
-            allClients = data.clients;
+            allClients = sortClients(data.clients);
             
             renderClients();
         }

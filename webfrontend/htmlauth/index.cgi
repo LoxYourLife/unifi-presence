@@ -25,13 +25,22 @@ if( $q->{ajax} ) {
 		$response{error} = &savemain();
 		
 		if(not defined $response{error}) {
-			LOGINF "Fetching client list";
-			$jsonobj = LoxBerry::JSON->new();
-			$clientsString = `node $lbpbindir/index.js clients`;
-			$clients = $jsonobj->parse($clientsString);
-			$response{clients} = $clients;
 
-			system("npm --prefix $lbpbindir run restart > /dev/null 2>&1");
+			$version = `node $lbpbindir/index.js version`;
+			$version =~ s/\015?\012?$//;
+			$response{version} = $version;
+
+			if ($version lt '6.4.54') {
+				$response{error} = 'version';
+			} else {
+				LOGINF "Fetching client list";
+				$jsonobj = LoxBerry::JSON->new();
+				$clientsString = `node $lbpbindir/index.js clients`;
+				$clients = $jsonobj->parse($clientsString);
+				$response{clients} = $clients;
+
+				system("npm --prefix $lbpbindir run restart > /dev/null 2>&1");
+			}
 		}
 		print JSON->new->canonical(1)->encode(\%response);
 	} 
@@ -63,9 +72,16 @@ if( $q->{ajax} ) {
 	$cfgfilecontent = jsescape($cfgfilecontent);
 	$template->param('JSONCONFIG', $cfgfilecontent);
 
-	$jsonobj = LoxBerry::JSON->new();
-	$clients = `node $lbpbindir/index.js clients`;
-	$template->param('CLIENTS', jsescape($clients));
+
+	$version = `node $lbpbindir/index.js version`;
+	$version =~ s/\015?\012?$//;
+	$template->param('UNIFI_VERSION', $version);
+
+	if ($version ge '6.4.54') {	
+		$jsonobj = LoxBerry::JSON->new();
+		$clients = `node $lbpbindir/index.js clients`;
+		$template->param('CLIENTS', jsescape($clients));
+	}
 
     if( !$q->{form} or $q->{form} eq "settings" ) {
 		$navbar{10}{active} = 1;
@@ -91,8 +107,8 @@ sub print_form
 	$navbar{10}{Name} = "Settings";
 	$navbar{10}{URL} = 'index.cgi';
  
- 	$navbar{20}{Name} = "Logs";
-	$navbar{20}{URL} = 'index.cgi?form=logs';
+ 	#$navbar{20}{Name} = "Logs";
+	#$navbar{20}{URL} = 'index.cgi?form=logs';
 		
 	LoxBerry::Web::lbheader($plugintitle, $helplink, $helptemplate);
 

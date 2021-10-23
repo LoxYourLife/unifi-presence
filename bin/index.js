@@ -46,6 +46,13 @@ const getClients = () => {
   });
 };
 
+const getVersion = () => {
+  runWithValidSession(async () => {
+    const version = await uniFi.getVersion();
+    console.log(version);
+  });
+};
+
 const isEmptyUser = _.isNil(config.username) || _.isEmpty(config.username);
 const isEmptyPassword = _.isNil(config.password) || _.isEmpty(config.password);
 const isEmptyIp = _.isNil(config.ipaddress) || _.isEmpty(config.ipaddress);
@@ -67,6 +74,8 @@ if (process.argv.includes('clients')) {
   login(token);
 } else if (process.argv.includes('events')) {
   listenToEvents();
+} else if (process.argv.includes('version')) {
+  getVersion();
 } else {
   console.log('Error calling the script');
   console.log('');
@@ -77,5 +86,6 @@ if (process.argv.includes('clients')) {
   console.log('  clients: fetches all active clients');
   console.log('  login: tries to login');
   console.log('  events: listens to UniFi events and forwards relvant data to MQTT');
+  console.log('  version: get the current software version of UDM');
   process.exit(21);
 }
