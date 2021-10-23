@@ -2,8 +2,6 @@ const _ = require('lodash');
 const UniFi = require('./lib/Unifi');
 const path = require('path');
 const Mqtt = require('./lib/Mqtt');
-const { symlinkSync } = require('fs');
-const { setUncaughtExceptionCaptureCallback } = require('process');
 
 const PRODUCTION = !process.argv.includes('--dev');
 const directories = PRODUCTION
@@ -37,8 +35,8 @@ const listenToEvents = async () => {
   runWithValidSession(() => uniFi.openClientEvents(config.clients));
 };
 
-const login = async () => {
-  console.log(await uniFi.login());
+const login = async (token) => {
+  console.log(await uniFi.login(token));
 };
 
 const getClients = () => {
@@ -60,7 +58,13 @@ if (isEmptyIp || isEmptyPassword || isEmptyUser) {
 if (process.argv.includes('clients')) {
   getClients();
 } else if (process.argv.includes('login')) {
-  login();
+  const tokenArg = process.argv.find((arg) => /--token=([0-9]+)/i.test(arg));
+  let token = null;
+  if (!_.isUndefined(tokenArg)) {
+    token = tokenArg.replace('--token=', '');
+  }
+
+  login(token);
 } else if (process.argv.includes('events')) {
   listenToEvents();
 } else {

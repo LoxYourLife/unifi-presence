@@ -37,14 +37,20 @@ module.exports = class UniFi {
     this.devices = null;
   }
 
-  async login() {
+  async login(token) {
+    const data = {
+      username: this.config.username,
+      password: this.config.password,
+      rememberMe: true
+    };
+
+    if (!_.isNil(token)) {
+      data.token = token;
+    }
+
     const loginUrl = `https://${this.config.ipaddress}/api/auth/login`;
     try {
-      const response = await this.axios.post(loginUrl, {
-        username: this.config.username,
-        password: this.config.password,
-        rememberMe: true
-      });
+      const response = await this.axios.post(loginUrl, data);
 
       this.cookieParser.parseAndAdd(response.headers['set-cookie']);
       this.cookieParser.save();
@@ -52,7 +58,12 @@ module.exports = class UniFi {
       fs.writeFileSync(this.userFile, JSON.stringify(response.data));
 
       return true;
-    } catch {
+    } catch (e) {
+      const twoFaRequired = !_.isUndefined(_.get(e, 'response.data.errors', []).find((text) => /2fa/gi.test(text)));
+      if (_.get(e, 'response, status') === 499 || twoFaRequired) {
+        return '2FA';
+      }
+
       this.cookieParser.reset();
       fs.writeFileSync(this.userFile, JSON.stringify({}));
 

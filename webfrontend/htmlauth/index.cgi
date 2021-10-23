@@ -148,14 +148,23 @@ sub savemain
 	$cfg->{username} = $q->{username};
 	$cfg->{password} = $q->{password};
 	$cfg->{topic} = $q->{topic};
+	$token = $q->{token};
 
 	# Write
 	$jsonobj->write();
-	$loginSuccessful = `node $lbpbindir/index.js login`;
+
+	if ($token eq "") {
+		$loginSuccessful = `node $lbpbindir/index.js login`;
+	} else {
+		$loginSuccessful = `node $lbpbindir/index.js login --token=$token`;
+	}
 	$loginSuccessful =~ s/\015?\012?$//;
 	LOGINF "UniFi Login: '$loginSuccessful'" ;
 	
-	if ($loginSuccessful eq false) {
+	if ($loginSuccessful eq "2FA") {
+		LOGINF "Unifi requires 2FA";
+		$errors = '2FA';
+	} elsif ($loginSuccessful eq false) {
 		LOGINF "UniFi Login: Error";
 		$errors = 'UniFi Login failed';
 	}

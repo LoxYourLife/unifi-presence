@@ -1,6 +1,3 @@
-//const dataDir = 'REPLACELBPDATADIR';
-const dataDir = '../../data';
-
 const fs = require('fs');
 const _ = require('lodash');
 

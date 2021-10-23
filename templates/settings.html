@@ -79,6 +79,10 @@
 			    <div class="lb_flex-item-label">&nbsp;</div>
                 <div class="lb_flex-item-spacer"></div>
                 <div class="lb_flex-item">
+                    <div id="2FA" style="display: none;">
+                        <label for="Main_password"><TMPL_VAR UNIFI.2FA></label>
+                        <input type="text" name="2FA" id="Main_2FA" />
+                    </div>
                     <a href="javascript:saveUnifi();" id="btnsavemqtt" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-btn-icon-left ui-icon-check" 
                             data-transition="flow"><TMPL_VAR COMMON.SAVE_BTN></a>
                     <div class="hint" id="unifi_hint">&nbsp;</div>
@@ -225,33 +229,44 @@ function saveUnifi() {
     const ipAddress = $('#Main_ipaddress');
     const username = $('#Main_username');
     const password = $('#Main_password');
-
+    const twoFa = $('#2FA');
     const topicValid = new RegExp(topic.data('validation-rule')).test(topic.val());
     const ipValid = new RegExp(ipAddress.data('validation-rule')).test(ipAddress.val());
 
     if (!topicValid || !ipValid) return false;
 
+    const data = { 
+        ajax: 'savesettings',
+        topic: topic.val(),
+        ipaddress: ipAddress.val(),
+        username: username.val(),
+        password: password.val()
+    };
+
+    
+    if (twoFa.css('display') === 'block') {
+        data.token = $('#Main_2FA').val();
+        twoFa.css('display', 'none');
+        $('#Main_2FA').val('');
+    }
+
 	$("#unifi_hint").attr("style", "color:blue").html("<TMPL_VAR COMMON.HINT_SAVE_SAVING>");
 	console.log ("Saving",ipAddress.val(), username.val(), topic.val());
     
-	$.ajax( { 
-			type: 'POST',
-			data: { 
-				ajax: 'savesettings',
-                topic: topic.val(),
-                ipaddress: ipAddress.val(),
-                username: username.val(),
-                password: password.val()
-			}
-		} )
+	$.ajax( {type: 'POST', data})
 	.fail(function( data ) {
-		console.log( "saving failed", data );
-		$("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: "+data.error);
+
+        console.log( "saving failed", data );
+        $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: " + data.error);
 	})
 	.done(function( data ) {
         if(null === data.error) {
 		    console.log( "save Success: ", data );
 		    $("#unifi_hint").attr("style", "color:green").html("<TMPL_VAR COMMON.HINT_SAVE_OK>");
+        } else if (data.error === '2FA') {
+            twoFa.css('display', 'block');
+            $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_2FA>:");
+            return;
         } else {
             console.log( "saving failed", data );
 		    $("#unifi_hint").attr("style", "color:red").html("<TMPL_VAR COMMON.HINT_SAVE_ERROR>: "+data.error);

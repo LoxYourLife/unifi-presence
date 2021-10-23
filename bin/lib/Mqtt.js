@@ -13,7 +13,7 @@ module.exports = class Mqtt {
     if (_.isNil(this.config)) return;
 
     try {
-      this.client.send(`${topic} ${message}`, this.config.Udpinport, this.config.Brokerhost, (err) => {});
+      this.client.send(`${topic} ${message}`, this.config.Udpinport, this.config.Brokerhost, () => {});
     } catch {
       this.connect();
     }
