@@ -175,7 +175,7 @@ $(function() {
     for(var elemname in cfg) {
         var inputType = $("#Main_"+elemname).attr('type');
         if (elemname === 'native') {
-            $('#Main_native').val(cfg[elemname]).change();
+            $('#Main_native').val(cfg[elemname] === true ? 1 : 0).change();
         } else {
             $("#Main_"+elemname).val(cfg[elemname]);
         }
@@ -292,7 +292,7 @@ function saveUnifi() {
         native: native.val() == 1,
         port: port.val() == '' ? null : port.val()
     };
-
+    console.log(data);
     
     if (twoFa.css('display') === 'block') {
         data.token = $('#Main_2FA').val();
