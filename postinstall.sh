@@ -1,18 +1,14 @@
-#!/bin/bash
- 
-# Shell script which is executed by bash *AFTER* complete installation is done
-# (but *BEFORE* postupdate). Use with caution and remember, that all systems may
-# be different!
+#!/bin/sh
+
+# Bashscript which is executed by bash *AFTER* complete installation is done
+# (but *BEFORE* postupdate). Use with caution and remember, that all systems
+# may be different! Better to do this in your own Pluginscript if possible.
 #
 # Exit code must be 0 if executed successfull.
-# Exit code 1 gives a warning but continues installation.
-# Exit code 2 cancels installation.
 #
 # Will be executed as user "loxberry".
 #
-# You can use all vars from /etc/environment in this script.
-#
-# We add 5 additional arguments when executing this script:
+# We add 5 arguments when executing the script:
 # command <TEMPFOLDER> <NAME> <FOLDER> <VERSION> <BASEFOLDER>
 #
 # For logging, print to STDOUT. You can use the following tags for showing
@@ -24,12 +20,13 @@
 # <ERROR> This is an error!"
 # <FAIL> This is a fail!"
 
-PLUGINNAME=REPLACELBPPLUGINDIR
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:$LBHOMEDIR/bin:$LBHOMEDIR/sbin"
+# To use important variables from command line use the following code:
+ARGV0=$0 # Zero argument is shell command
+ARGV1=$1 # First argument is temp folder during install
+ARGV2=$2 # Second argument is Plugin-Name for scipts etc.
+ARGV3=$3 # Third argument is Plugin installation folder
+ARGV4=$4 # Forth argument is Plugin version
+ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 
-ENVIRONMENT=$(cat /etc/environment)
-export $ENVIRONMENT
-
-
-npm --prefix $LBHOMEDIR/bin/plugins/${PLUGINNAME} ci --only=production
+npm --prefix $ARGV5/bin/plugins/$ARGV3 ci --only=production
 exit 0;

@@ -1,10 +1,22 @@
-#!/bin/bash
-PLUGINNAME=REPLACELBPPLUGINDIR
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:$LBHOMEDIR/bin:$LBHOMEDIR/sbin"
+#!/bin/sh
 
-ENVIRONMENT=$(cat /etc/environment)
-export $ENVIRONMENT
+ARGV0=$0 # Zero argument is shell command
+ARGV1=$1 # First argument is temp folder during install
+ARGV2=$2 # Second argument is Plugin-Name for scipts etc.
+ARGV3=$3 # Third argument is Plugin installation folder
+ARGV4=$4 # Forth argument is Plugin version
+ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 
+echo "<INFO> Copy back existing config files"
+cp -p -v -r /tmp/$ARGV1\_upgrade/config/$ARGV3/* $ARGV5/config/plugins/$ARGV3/ 
 
-npm --prefix $LBHOMEDIR/bin/plugins/${PLUGINNAME} restart
+echo "<INFO> Remove temporary folders"
+rm -r /tmp/$ARGV1\_upgrade
+
+echo "<INFO> Update Dependencies"
+npm --prefix $ARGV5/bin/plugins/$ARGV3 ci --only=production
+
+echo "<INFO> Restart Event App"
+npm --prefix $ARGV5/bin/plugins/$ARGV3 restart
+
 exit 0;
