@@ -54,18 +54,35 @@
         <!-- Form SETTINGS -->
         <form id="form" onsubmit="saveUnifi()">
 
-            <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
+            <div class="wide"><TMPL_VAR UNIFI.MQTT_SETTINGS></div>
             <br>
-
             <div data-role="fieldcontain" class="main_topic_block">
                 <label for="Main_topic"><TMPL_VAR UNIFI.TOPIC></label>
                 <input name="Main_topic" id="Main_topic" type="text" data-validation-error="<TMPL_VAR VALIDATION.TOPIC_ERROR>" data-validation-rule="^[\w]+((\/[\w]+)+)?$">
                 <p class="hint"><TMPL_VAR UNIFI.TOPIC_HINT></p>
             </div>
+            
+            <div class="wide"><TMPL_VAR UNIFI.CONTROLLER></div>
+            <br>
+
+            <div data-role="fieldcontain" class="main_native_block">
+                <label for="Main_native"><TMPL_VAR UNIFI.NATIVE></label>
+                <select onchange="showHidePort()"id="Main_native" name="native" data-role="flipswitch">
+                    <option value="0"><TMPL_VAR UNIFI.OFF></option>
+                    <option value="1"><TMPL_VAR UNIFI.ON></option>
+                </select><br/>
+                <p class="hint"><TMPL_VAR UNIFI.NATIVE_HINT></p>
+            </div>
+            
             <div data-role="fieldcontain" class="main_ipaddress_block">
                 <label for="Main_ipaddress"><TMPL_VAR UNIFI.IP></label>
                 <input name="Main_ipaddress" id="Main_ipaddress" type="text" data-validation-error="ERR" data-validation-rule="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" />
                 <p class="hint"><TMPL_VAR UNIFI.IP_HINT></p>
+            </div>
+            <div data-role="fieldcontain" class="main_port_block" id="main_port_block">
+                <label for="Main_port"><TMPL_VAR UNIFI.PORT></label>
+                <input name="Main_port" id="Main_port" type="text" />
+                <p class="hint"><TMPL_VAR UNIFI.PORT_HINT></p>
             </div>
             <div data-role="fieldcontain" class="main_username_block">
                 <label for="Main_username"><TMPL_VAR UNIFI.USERNAME></label>
@@ -157,7 +174,11 @@ $(function() {
     // Elements in Main
     for(var elemname in cfg) {
         var inputType = $("#Main_"+elemname).attr('type');
-        $("#Main_"+elemname).val(cfg[elemname]);
+        if (elemname === 'native') {
+            $('#Main_native').val(cfg[elemname]).change();
+        } else {
+            $("#Main_"+elemname).val(cfg[elemname]);
+        }
     }
 
     const unifiVersion = '<TMPL_VAR UNIFI_VERSION>';
@@ -178,6 +199,16 @@ $(function() {
     }
 });
 
+function showHidePort() {
+    
+ if ($('#Main_native').val() == 1) {
+    $('#main_port_block').css('display', 'none');
+    $('#Main_port').val('');
+} else {
+     $('#main_port_block').css('display', 'block');
+ }
+}
+
 function sortClients(clients) {
     return clients.sort((a, b) => {
         if (existingClients.includes(a.mac)) return -1;
@@ -197,8 +228,8 @@ function renderClients() {
         const row = `<tr>
             <td>
                 <select onchange="clientSelection('${client.mac}')" id="${client.mac.replaceAll(':', '')}" name="${client.mac.replaceAll(':', '')}" data-role="flipswitch">
-                    <option ${selected ? '': 'selected="selected"'} value="0">Aus</option>
-                    <option value="1" ${selected ? 'selected="selected"' : ''}">Ein</option>
+                    <option ${selected ? '': 'selected="selected"'} value="0"><TMPL_VAR UNIFI.OFF></option>
+                    <option value="1" ${selected ? 'selected="selected"' : ''}"><TMPL_VAR UNIFI.ON></option>
                 </select>
             </td>
             <td class="client-table--data">${client.name}</td>
@@ -244,6 +275,8 @@ function saveUnifi() {
     const ipAddress = $('#Main_ipaddress');
     const username = $('#Main_username');
     const password = $('#Main_password');
+    const native = $('#Main_native');
+    const port = $('#Main_port');
     const twoFa = $('#2FA');
     const topicValid = new RegExp(topic.data('validation-rule')).test(topic.val());
     const ipValid = new RegExp(ipAddress.data('validation-rule')).test(ipAddress.val());
@@ -255,7 +288,9 @@ function saveUnifi() {
         topic: topic.val(),
         ipaddress: ipAddress.val(),
         username: username.val(),
-        password: password.val()
+        password: password.val(),
+        native: native.val() == 1,
+        port: port.val() == '' ? null : port.val()
     };
 
     

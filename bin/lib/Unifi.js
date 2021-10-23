@@ -5,6 +5,14 @@ const https = require('https');
 const CookieParser = require('./CookieParser');
 const WebSocket = require('ws').WebSocket;
 
+const LOGIN = 'LOGIN';
+const DEVICES = 'DEVICES';
+const HEALTH = 'HEALTH';
+const SYSINFO = 'SYSINFO';
+const ACTIVE_CLIENTS = 'ACTIVE_CLIENTS';
+const HISTORY_CLIENTS = 'HISTORY_CLIENTS';
+const EVENTS = 'EVENTS';
+
 const convertClient = (client) => ({
   name: client.display_name || client.name || client.oui || 'unbekannt',
   mac: client.mac,
@@ -37,6 +45,36 @@ module.exports = class UniFi {
     this.devices = null;
   }
 
+  getUrl(type) {
+    const isPort = !_.isNil(this.config.port);
+    const isNative = this.config.native == true;
+    const port = !isNative && isPort ? `:${this.config.port}` : '';
+    const protocol = type === EVENTS ? 'wss://' : 'https://';
+
+    const url = protocol + this.config.ipaddress + port;
+
+    const prefix = isNative && type !== LOGIN ? '/proxy/network' : '';
+
+    switch (type) {
+      case LOGIN:
+        if (isNative) return url + '/api/auth/login';
+        return url + '/api/login';
+      case EVENTS:
+        return url + prefix + '/wss/s/default/events?clients=v2';
+      case HEALTH:
+        return url + prefix + '/api/s/default/stat/health';
+      case DEVICES:
+        return url + prefix + '/api/s/default/stat/device';
+      case SYSINFO:
+        return url + prefix + '/api/s/default/stat/sysinfo';
+      case ACTIVE_CLIENTS:
+        return url + prefix + '/v2/api/site/default/clients/active';
+      case HISTORY_CLIENTS:
+        return url + prefix + '/v2/api/site/default/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24';
+      default:
+        return null;
+    }
+  }
   async login(token) {
     const data = {
       username: this.config.username,
@@ -44,11 +82,19 @@ module.exports = class UniFi {
       rememberMe: true
     };
 
-    if (!_.isNil(token)) {
-      data.token = token;
+    if (!this.config.native) {
+      data.strict = true;
     }
 
-    const loginUrl = `https://${this.config.ipaddress}/api/auth/login`;
+    if (!_.isNil(token)) {
+      if (this.config.native) {
+        data.token = token;
+      } else {
+        data.ubic_2fa_token = token;
+      }
+    }
+
+    const loginUrl = this.getUrl(LOGIN);
     try {
       const response = await this.axios.post(loginUrl, data);
 
@@ -60,7 +106,8 @@ module.exports = class UniFi {
       return true;
     } catch (e) {
       const twoFaRequired = !_.isUndefined(_.get(e, 'response.data.errors', []).find((text) => /2fa/gi.test(text)));
-      if (_.get(e, 'response, status') === 499 || twoFaRequired) {
+      const twoFaRequiredOld = _.get(e, 'response.data.meta.msg', '') == 'api.err.Ubic2faTokenRequired';
+      if (_.get(e, 'response, status') === 499 || twoFaRequired || twoFaRequiredOld) {
         return '2FA';
       }
 
@@ -72,7 +119,7 @@ module.exports = class UniFi {
   }
 
   async health() {
-    const url = `https://${this.config.ipaddress}/proxy/network/api/s/default/stat/health`;
+    const url = this.getUrl(HEALTH);
     try {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
       return response.status === 200;
@@ -82,7 +129,7 @@ module.exports = class UniFi {
   }
 
   async getVersion() {
-    const url = `https://${this.config.ipaddress}/proxy/network/api/s/default/stat/sysinfo`;
+    const url = this.getUrl(SYSINFO);
     try {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
       return _.get(response, 'data.data.0.version', 0);
@@ -94,9 +141,9 @@ module.exports = class UniFi {
 
   async getActiveClients() {
     try {
-      const activeUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/active`;
+      const activeUrl = this.getUrl(ACTIVE_CLIENTS);
       const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() } });
-      const historyUrl = `https://${this.config.ipaddress}/proxy/network/v2/api/site/default/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24`;
+      const historyUrl = this.getUrl(HISTORY_CLIENTS);
       const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
 
       return [...activeResponse.data, ...historyResponse.data].map(convertClient);
@@ -107,7 +154,7 @@ module.exports = class UniFi {
 
   async getDevices() {
     try {
-      const deviceUrl = `https://${this.config.ipaddress}/proxy/network/api/s/default/stat/device`;
+      const deviceUrl = this.getUrl(DEVICES);
       const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() } });
       this.devices = response.data.data.map(convertDevice);
       return this.devices;
@@ -129,7 +176,7 @@ module.exports = class UniFi {
   }
 
   async openClientEvents(watchedClients) {
-    const url = `wss://${this.config.ipaddress}/proxy/network/wss/s/default/events?clients=v2`;
+    const url = this.getUrl(EVENTS);
 
     const ws = new WebSocket(url, {
       headers: { cookie: this.cookieParser.serialize() },

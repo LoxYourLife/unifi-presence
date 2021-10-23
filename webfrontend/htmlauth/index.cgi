@@ -164,6 +164,8 @@ sub savemain
 	$cfg->{username} = $q->{username};
 	$cfg->{password} = $q->{password};
 	$cfg->{topic} = $q->{topic};
+	$cfg->{native} = $q->{native} eq "true" ? \1 : \0;
+	$cfg->{port} = $q->{port} eq '' ? undef : 0 + $q->{port};
 	$token = $q->{token};
 
 	# Write
