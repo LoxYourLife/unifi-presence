@@ -142,7 +142,6 @@ module.exports = class UniFi {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
       return _.get(response, 'data.data.0.version', 0);
     } catch (e) {
-      console.log(e.response);
       return 0;
     }
   }
