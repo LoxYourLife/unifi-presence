@@ -3,5 +3,7 @@
     "password": "",
     "ipaddress": "",
     "topic": "UniFi/clients",
+    "native": true,
+    "port": null,
     "clients": []
 }

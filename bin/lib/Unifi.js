@@ -31,6 +31,14 @@ const convertDevice = (device) => ({
 module.exports = class UniFi {
   constructor({ config, directories, mqtt }) {
     this.config = config;
+
+    if (_.isUndefined(this.config.native)) {
+      this.config.native = true;
+    }
+    if (_.isUndefined(this.config.port)) {
+      this.config.port = null;
+    }
+
     this.directories = directories;
     this.mqtt = mqtt;
 
