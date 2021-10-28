@@ -77,6 +77,7 @@ if (process.argv.includes('clients')) {
 } else if (process.argv.includes('version')) {
   getVersion();
 } else {
+  mqtt.disconnect();
   console.log('Error calling the script');
   console.log('');
   console.log('node index.js');
@@ -89,3 +90,5 @@ if (process.argv.includes('clients')) {
   console.log('  version: get the current software version of UDM');
   process.exit(21);
 }
+
+mqtt.disconnect();

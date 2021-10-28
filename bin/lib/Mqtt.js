@@ -15,6 +15,12 @@ module.exports = class Mqtt {
       clientId: 'UniFiPresence'
     });
   }
+
+  disconnect() {
+    if (!this.client) return;
+    this.client.end();
+  }
+
   send(topic, message) {
     if (_.isNil(this.config)) return;
 
