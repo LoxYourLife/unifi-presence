@@ -125,9 +125,13 @@ sub settings_form
 {
 
 	my $mqttplugindata = LoxBerry::System::plugindata("mqttgateway");
-	$template->param("MQTTGATEWAY_INSTALLED", 1) if ( $mqttplugindata );
-	#my $mslist_select_html = LoxBerry::Web::mslist_select_html( FORMID => 'Main.msno', LABEL => 'Receiving Miniserver', DATA_MINI => "0" );
-	#$template->param('mslist_select_html', $mslist_select_html);
+	my $globalConfigFile = "$lbsconfigdir/general.json";
+
+	$jsonobj = LoxBerry::JSON->new();
+	$globalConfig = $jsonobj->open(filename => $globalConfigFile);
+
+	$template->param("MQTTGATEWAY_INSTALLED", 1) if ( $mqttplugindata  && $globalConfig->{Mqtt});
+	
 
 }
 
