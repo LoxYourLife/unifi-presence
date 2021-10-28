@@ -17,5 +17,8 @@ echo "<INFO> Backing up existing config files"
 cp -p -v -r $ARGV5/config/plugins/$ARGV3/ /tmp/$ARGV1\_upgrade/config
 cp -p -v -r $ARGV5/data/plugins/$ARGV3/ /tmp/$ARGV1\_upgrade/data
 
+echo "<INFO> Stopping Service"
+npm --prefix $ARGV5/bin/plugins/$ARGV3 stop
+
 # Exit with Status 0
 exit 0

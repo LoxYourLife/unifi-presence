@@ -17,7 +17,7 @@ rm -r /tmp/$ARGV1\_upgrade
 echo "<INFO> Update Dependencies"
 npm --prefix $ARGV5/bin/plugins/$ARGV3 ci --only=production
 
-echo "<INFO> Restart Event App"
-npm --prefix $ARGV5/bin/plugins/$ARGV3 restart
+echo "<INFO> Start Event App"
+npm --prefix $ARGV5/bin/plugins/$ARGV3 start
 
 exit 0;
