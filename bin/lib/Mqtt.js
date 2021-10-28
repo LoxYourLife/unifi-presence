@@ -1,21 +1,24 @@
-const dgram = require('dgram');
+const mqtt = require('mqtt');
 const _ = require('lodash');
 
 module.exports = class Mqtt {
   constructor(globalConfig) {
     this.config = _.get(globalConfig, 'Mqtt', null);
+    this.connect();
   }
 
   connect() {
-    this.client = dgram.createSocket('udp4');
+    const connectUrl = `mqtt://${this.config.Brokerhost}:${this.config.Brokerport}`;
+    this.client = mqtt.connect(connectUrl, {
+      username: this.config.Brokeruser,
+      password: this.config.Brokerpass,
+      clientId: 'UniFiPresence'
+    });
   }
   send(topic, message) {
     if (_.isNil(this.config)) return;
 
-    try {
-      this.client.send(`${topic} ${message}`, this.config.Udpinport, 'localhost', () => {});
-    } catch {
-      this.connect();
-    }
+    if (!this.client.connected) this.client.reconnect();
+    this.client.publish(topic, message);
   }
 };

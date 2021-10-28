@@ -18,11 +18,6 @@
     "eslint": "--ignore-path .gitignore --cache --format=codeframe --max-warnings=0 \"{src,scripts,tests,.github}/**/*.{js,md,html}\" \"*.{js,md,html}\" \".*.{js,md,html}\"",
     "prettier": "--ignore-path .gitignore --loglevel=warn \"{src,scripts,tests,.github}/**/*.{js,md,yml,json,html}\" \"*.{js,yml,json,html}\" \".*.{js,yml,json,html}\" \"!package-lock.json\""
   },
-  "dependencies": {
-    "axios": "0.23.0",
-    "lodash": "4.17.21",
-    "ws": "8.2.3"
-  },
   "devDependencies": {
     "eslint": "^7.32.0",
     "prettier": "2.4.0"

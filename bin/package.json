@@ -15,8 +15,9 @@
   "dependencies": {
     "axios": "0.23.0",
     "lodash": "4.17.21",
-    "ws": "8.2.3",
-    "pm2": "5.1.2"
+    "mqtt": "4.2.8",
+    "pm2": "5.1.2",
+    "ws": "8.2.3"
   },
   "author": "",
   "license": "ISC"
