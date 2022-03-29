@@ -32,8 +32,9 @@ export default {
   setup() {
     const store = useStore();
     let pingInterval = null;
+
     const connectToSocket = () => {
-      const socket = new WebSocket('ws://localhost:3000/plugins/unifi_presence/api/socket', 'webClient');
+      const socket = new WebSocket(`ws://${document.location.hostname}:3000/plugins/unifi_presence/api/socket`, 'webClient');
       socket.onopen = (event) => {
         pingInterval = setInterval(() => socket.send('ping'), 20000);
       };
