@@ -4,7 +4,7 @@ import path from 'path';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 
 module.exports = defineConfig({
-  base: '/plugins/unifi_presence',
+  base: '/admin/plugins/unifi_presence',
   root: 'app',
   write: false,
   plugins: [vue(), quasar({ sassVariables: 'app/quasar.extras.sass', autoImportComponentCase: 'combined' })],

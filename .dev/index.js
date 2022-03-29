@@ -74,7 +74,7 @@ const createServer = async () => {
     _,
     translate
   });
-  app.use('/plugins/unifi_presence', async (req, res, next) => {
+  app.use('/admin/plugins/unifi_presence', async (req, res, next) => {
     const originalRender = res.render;
 
     res.render = (view, options, fn) => {
@@ -87,7 +87,7 @@ const createServer = async () => {
     };
     await plugin(req, res, next);
   });
-  app.use('/plugins/unifi_presence', express.static(path.resolve(__dirname, '../webfrontend/htmlauth/')));
+  app.use('/admin/plugins/unifi_presence', express.static(path.resolve(__dirname, '../webfrontend/htmlauth/')));
 
   app.get('*', (req, res, next) => {
     if (req.ws) return next();
