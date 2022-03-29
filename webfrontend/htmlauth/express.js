@@ -3,8 +3,8 @@ const path = require('path');
 const websocket = require('./api/socket');
 const http = require('./api/http');
 
-module.exports = ({ router, expressStatic, _ }) => {
-  router.use('/assets', expressStatic(path.resolve(__dirname, 'assets')));
+module.exports = ({ router, static, _ }) => {
+  router.use('/assets', static(path.resolve(__dirname, 'assets')));
 
   router.get('/api/config', http.getConfig);
   router.put('/api/config', http.saveConfig);

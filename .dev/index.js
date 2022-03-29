@@ -69,7 +69,7 @@ const createServer = async () => {
   const module = require(path.resolve(__dirname, '../webfrontend/htmlauth/express.js'));
   const plugin = module({
     router: addWsToRouter(express.Router()),
-    expressStatic: express.static,
+    static: express.static,
     logger,
     _,
     translate
