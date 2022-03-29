@@ -20,5 +20,10 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
+echo "<INFO> installing bin dependencies"
 npm --prefix $PBIN ci --only=production
+
+echo "<INFO> copy .htaccess"
+cp webfrontend/htmlauth/.htaccess $PHTMLAUTH/.htaccess
+
 exit 0;
