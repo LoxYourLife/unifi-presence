@@ -1,94 +1,132 @@
-const _ = require('lodash');
-const UniFi = require('./lib/Unifi');
-const path = require('path');
+const UniFiSocket = require('./lib/UniFiSocket');
 const Mqtt = require('./lib/Mqtt');
+const fs = require('fs');
+const ws = require('ws');
+const directories = require('./lib/directories');
+const { Unauthorized, TwoFactorCodeRequired, Disconnected } = require('./lib/errors');
 
-const PRODUCTION = !process.argv.includes('--dev');
-const directories = PRODUCTION
-  ? {
-      config: 'REPLACELBPCONFIGDIR',
-      data: 'REPLACELBPDATADIR',
-      homedir: process.env.LBHOMEDIR
-    }
-  : {
-      config: path.join(__dirname, '../config'),
-      data: path.join(__dirname, '../data'),
-      homedir: path.join(__dirname, '../loxberry')
-    };
-
-const config = require(`${directories.config}/unifi.json`);
+const configFile = `${directories.config}/unifi.json`;
+const cookieFile = `${directories.data}/unifi.cookies.json`;
+let config = require(configFile);
 const globalConfig = require(`${directories.homedir}/config/system/general.json`);
 
+const states = {
+  WAIT_FOR_CONFIG: 'WAIT_FOR_CONFIG',
+  CONNECTED: 'CONNECTED',
+  DISCONNECTED: 'DISCONNECTED',
+  UNAUTHORIZED: 'UNAUTHORIZED'
+};
+let socket, pingInterval;
+let currentState = states.DISCONNECTED;
+let restart = false;
+
 const mqtt = new Mqtt(globalConfig);
-const uniFi = new UniFi({ config, directories, mqtt });
-
-const runWithValidSession = async (operation) => {
-  const isSessionValid = await uniFi.health();
-  if (!isSessionValid) {
-    await uniFi.login();
+const uniFi = new UniFiSocket({ config, directories, mqtt });
+fs.watch(configFile, {}, () => {
+  delete require.cache[require.resolve(configFile)];
+  try {
+    config = require(configFile);
+    console.log('load new config');
+    uniFi.setConfig(config);
+  } catch {
+    console.log('error while reading changed config');
   }
+});
 
-  await operation();
+const waitForCookieChange = async () => {
+  console.log('wait for cookie change');
+  return new Promise((resolve) => fs.watch(cookieFile, { persistent: false }, resolve));
+};
+const waitForConfigChange = async () => {
+  console.log('wait for config change');
+  return new Promise((resolve) => fs.watch(configFile, { persistent: false }, resolve));
+};
+
+const sendStatus = (status) => {
+  currentState = status;
+  if (socket && socket.readyState === ws.OPEN) {
+    socket.send(
+      JSON.stringify({
+        type: 'serviceStatus',
+        data: { status }
+      })
+    );
+  }
 };
 
 const listenToEvents = async () => {
-  runWithValidSession(() => uniFi.openClientEvents(config.clients));
-};
-
-const login = async (token) => {
-  console.log(await uniFi.login(token));
-};
-
-const getClients = () => {
-  runWithValidSession(async () => {
-    const clients = await uniFi.getActiveClients();
-    console.log(JSON.stringify(clients));
-  });
-};
-
-const getVersion = () => {
-  runWithValidSession(async () => {
-    const version = await uniFi.getVersion();
-    console.log(version);
-  });
-};
-
-const isEmptyUser = _.isNil(config.username) || _.isEmpty(config.username);
-const isEmptyPassword = _.isNil(config.password) || _.isEmpty(config.password);
-const isEmptyIp = _.isNil(config.ipaddress) || _.isEmpty(config.ipaddress);
-
-if (isEmptyIp || isEmptyPassword || isEmptyUser) {
-  console.log('please configure the app first');
-  process.exit(20);
-}
-
-if (process.argv.includes('clients')) {
-  getClients();
-} else if (process.argv.includes('login')) {
-  const tokenArg = process.argv.find((arg) => /--token=([0-9]+)/i.test(arg));
-  let token = null;
-  if (!_.isUndefined(tokenArg)) {
-    token = tokenArg.replace('--token=', '');
+  try {
+    await uniFi.setup();
+    await uniFi.getVersion();
+    sendStatus(states.CONNECTED);
+    await uniFi.openClientEvents(config.clients);
+  } catch (error) {
+    if (error instanceof Unauthorized && !config.twoFaEnabled) {
+      sendStatus(states.UNAUTHORIZED);
+      try {
+        const login = await uniFi.login();
+        return login;
+      } catch (loginError) {
+        if (loginError instanceof TwoFactorCodeRequired) {
+          return waitForCookieChange();
+        }
+      }
+    } else if (error instanceof Unauthorized && config.twoFaEnabled) {
+      sendStatus(states.UNAUTHORIZED);
+      return waitForCookieChange();
+    } else if (error instanceof Disconnected) {
+      sendStatus(states.DISCONNECTED);
+      console.log('Connection lost, retry in 5 seconds');
+      return new Promise((resolve) => setTimeout(resolve, 5000));
+    } else if (error.message.indexOf('ENETUNREACH') != -1) {
+      sendStatus(states.DISCONNECTED);
+      console.log('No Network, retry in 10 seconds');
+      return new Promise((resolve) => setTimeout(resolve, 10000));
+    }
+    sendStatus(states.WAIT_FOR_CONFIG);
+    return waitForConfigChange();
   }
+};
 
-  login(token);
-} else if (process.argv.includes('events')) {
-  listenToEvents();
-} else if (process.argv.includes('version')) {
-  getVersion();
-} else {
-  mqtt.disconnect();
-  console.log('Error calling the script');
-  console.log('');
-  console.log('node index.js');
-  console.log('options:');
-  console.log('  --dev: run ins dev mode');
-  console.log('commands:');
-  console.log('  clients: fetches all active clients');
-  console.log('  login: tries to login');
-  console.log('  events: listens to UniFi events and forwards relvant data to MQTT');
-  console.log('  version: get the current software version of UDM');
-  process.exit(21);
-}
+const openSocket = () => {
+  try {
+    socket = new ws.WebSocket('ws://localhost:3000/plugins/unifi_presence/api/socket');
+  } catch (error) {
+    console.log('WS Error reconnecting in 5s', error);
+    setTimeout(openSocket, 5000);
+    return;
+  }
+  pingInterval = setInterval(() => socket.ping, 20000);
+  socket.on('open', () => sendStatus(currentState));
+  socket.on('message', (message) => {
+    if (message.toString() === 'pong') return;
+    console.log('WS got message:', message.toString('Utf-8'));
+  });
 
-mqtt.disconnect();
+  const onClose = () => {
+    clearInterval(pingInterval);
+    socket = null;
+    pingInterval = null;
+    uniFi.setSocket(null);
+    setTimeout(openSocket, 2000);
+  };
+
+  socket.on('close', () => {
+    console.log('WS Disconnected');
+    onClose();
+  });
+  socket.on('error', (error) => {
+    console.log('Express socket returned error', error);
+    onClose();
+  });
+
+  uniFi.setSocket(socket);
+};
+
+const eventLoop = async () => {
+  openSocket();
+  await listenToEvents();
+  if (!restart) await eventLoop();
+};
+
+eventLoop();

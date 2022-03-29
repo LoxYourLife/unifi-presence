@@ -1,0 +1,7 @@
+{
+  "name": "loxberry-unifi-presence",
+  "version": "0.0.1",
+  "author": "Ronald Marske",
+  "license": "APACHE 2.0",
+  "dependencies": {}
+}
