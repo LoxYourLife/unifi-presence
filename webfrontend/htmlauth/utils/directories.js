@@ -5,7 +5,7 @@ module.exports = () => {
     return {
       config: 'REPLACELBPCONFIGDIR',
       data: 'REPLACELBPDATADIR',
-      bin: 'REPLACELBBINDIR',
+      bin: 'REPLACELBPBINDIR',
       homedir: process.env.LBHOMEDIR
     };
   }
