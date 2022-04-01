@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "PM2_HOME=$(pwd)/.pm2 pm2 start unifi.config.js",
     "stop": "PM2_HOME=$(pwd)/.pm2 pm2 stop unifi.config.js",
-    "delete": "PM2_HOME=$(pwd)/.pm2 pm2 del unifi.config.js",
+    "delete": "PM2_HOME=$(pwd)/.pm2 pm2 kill",
     "status": "PM2_HOME=$(pwd)/.pm2 pm2 status unifi.config.js",
     "restart": "PM2_HOME=$(pwd)/.pm2 pm2 restart unifi.config.js"
   },
