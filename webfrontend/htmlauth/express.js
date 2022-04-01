@@ -3,8 +3,11 @@ const path = require('path');
 const websocket = require('./api/socket');
 const http = require('./api/http');
 
-module.exports = ({ router, static, _ }) => {
-  router.use('/assets', static(path.resolve(__dirname, 'assets')));
+module.exports = ({ router, expressStatic, _, logger }) => {
+  router.use('/assets', expressStatic(path.resolve(__dirname, 'assets')));
+
+  router.get('/', http.index);
+  router.get('/clients', http.index);
 
   router.get('/api/config', http.getConfig);
   router.put('/api/config', http.saveConfig);
@@ -13,7 +16,6 @@ module.exports = ({ router, static, _ }) => {
   router.get('/api/sites', http.getSites);
   router.post('/api/restartService', http.restartService);
 
-  router.ws('/api/socket', websocket(_));
-  router.get('/*', http.index);
+  router.ws('/api/socket', websocket(_, logger));
   return router;
 };

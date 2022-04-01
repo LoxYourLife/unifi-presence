@@ -2,8 +2,30 @@ const UniFi = require('./Unifi');
 const _ = require('lodash');
 const ws = require('ws');
 const errors = require('./errors');
+const wifiSignalPercentage = require('./signalPercentages');
 const { EVENTS } = require('./urlTypes');
 
+const convertClients = (clients) => new Map(clients.map((client) => [client.mac, client]));
+
+const wiredClients = (clients, existing) => {
+  const mapList = clients
+    .filter((client) => client.type === 'WIRED')
+    .map((client) => {
+      if (existing.has(client.mac)) {
+        return [client.mac, existing.get(client.mac)];
+      }
+
+      const enhancedClient = Object.assign(
+        {
+          lastChanged: new Date(),
+          rxBytes: 0
+        },
+        client
+      );
+      return [client.mac, enhancedClient];
+    });
+  return new Map(mapList);
+};
 module.exports = class UniFiSocket extends UniFi {
   constructor({ config, directories, mqtt }) {
     super({ config, directories });
@@ -24,6 +46,9 @@ module.exports = class UniFiSocket extends UniFi {
       if (this.socket) this.socket.terminate();
     }
     super.setConfig(config);
+
+    this.clients = convertClients(this.config.clients);
+    this.wired = wiredClients(this.config.clients, this.wired || new Map());
   }
 
   openClientEvents() {
@@ -63,8 +88,6 @@ module.exports = class UniFiSocket extends UniFi {
 
     if (message.toString() === 'pong') return;
 
-    const clients = new Map(this.config.clients.map((client) => [client.mac, client]));
-
     try {
       const event = JSON.parse(message.toString());
       const data = event.data;
@@ -73,15 +96,15 @@ module.exports = class UniFiSocket extends UniFi {
         return this.deviceSync(data);
       }
 
-      const relevantDevices = data.filter((client) => clients.has(client.mac) || clients.has(client.user));
+      const relevantDevices = data.filter((client) => this.clients.has(client.mac) || this.clients.has(client.user));
 
       if (_.isEmpty(relevantDevices)) return;
-
+      //console.log(relevantDevices, event.meta.message);
       switch (event.meta.message) {
         case 'client:sync':
-          return this.syncMessage(clients, relevantDevices);
+          return this.syncMessage(relevantDevices);
         case 'events':
-          return this.eventMessage(clients, relevantDevices);
+          return this.eventMessage(relevantDevices);
         default:
           console.log('unhandled event', event);
           return;
@@ -92,36 +115,67 @@ module.exports = class UniFiSocket extends UniFi {
     }
   }
 
-  async syncMessage(clients, relevantDevices) {
+  async syncMessage(relevantDevices) {
     await relevantDevices.forEach(async (event) => {
-      const client = clients.get(event.mac);
+      const isWireless = event.type === 'WIRELESS';
+      const client = this.clients.get(event.mac);
       const cloned = _.clone(client);
 
-      client.ap = await this.getAccessPoint(event.ap_mac);
-      client.ssid = event.essid;
+      client.ap = await this.getAccessPoint(isWireless ? event.ap_mac : event.gw_mac);
       client.ip = event.ip;
-      client.experience = event.wifi_experience_score;
-      client.connected = !client.connected ? true : client.connected;
 
-      if (!_.isEqual(client, cloned)) this.send(client);
+      if (event.type === 'WIRELESS') {
+        client.ssid = event.essid;
+        client.experience = event.wifi_experience_score;
+        client.connected = !client.connected ? true : client.connected;
+
+        if (event.signal) {
+          client.signalDbm = event.signal;
+          client.signalPercentage = wifiSignalPercentage[event.signal];
+        } else {
+          client.signalDbm = -100;
+          client.signalPercentage = 0;
+        }
+      } else {
+        const wiredClient = this.wired.get(event.mac);
+        if (wiredClient.rxBytes !== event.rx_bytes) {
+          wiredClient.rxBytes = event.rx_bytes;
+          wiredClient.lastChanged = new Date();
+          this.wired.set(event.mac, wiredClient);
+
+          client.connected = true;
+        } else if (new Date() - wiredClient.lastChanged > 40000) {
+          client.connected = false;
+        }
+      }
+
+      if (!_.isEqual(client, cloned)) {
+        this.send(client);
+        this.clients.set(event.mac, client);
+        console.log(client);
+      }
     });
   }
 
-  async eventMessage(clients, relevantDevices) {
+  async eventMessage(relevantDevices) {
     await relevantDevices.forEach(async (event) => {
-      const client = clients.get(event.user);
+      const client = this.clients.get(event.user);
       const cloned = _.clone(client);
+      if (client.type === 'WIRELESS') {
+        client.ssid = event.ssid;
+        client.ap = await this.getAccessPoint(event.ap);
+      }
 
-      client.ssid = event.ssid;
-      client.ap = await this.getAccessPoint(event.ap);
-
-      if (event.key === 'EVT_WU_Connected') {
+      if (event.key === ['EVT_WU_Connected', 'EVT_LU_Connected'].includes(event.key)) {
         client.connected = true;
       } else if (event.key === 'EVT_WU_Disconnected') {
         client.connected = false;
       }
 
-      if (!_.isEqual(client, cloned)) this.send(client);
+      if (!_.isEqual(client, cloned)) {
+        this.send(client);
+        this.clients.set(client.mac, client);
+      }
     });
   }
 
@@ -143,7 +197,7 @@ module.exports = class UniFiSocket extends UniFi {
         }
       };
 
-      if (this.externalSocket) {
+      if (this.externalSocket && this.externalSocket.readyState === ws.OPEN) {
         this.externalSocket.send(JSON.stringify(event));
       }
     });
@@ -151,7 +205,7 @@ module.exports = class UniFiSocket extends UniFi {
 
   send(client) {
     const name = client.name.replace(/[^a-z0-9]+/gi, '-');
-    console.log(`Send status update for device: ${client.name}`);
+    //console.log(`Send status update for device: ${client.name}`);
     this.mqtt.send(`${this.config.topic}/${name}`, JSON.stringify(client));
   }
 };

@@ -4,15 +4,18 @@
     <div class="col-12">
       <div class="text-h5 self-end">{{ $t('UNIFI.MQTT_SETTINGS') }}</div>
       <q-separator spaced />
-      <q-input name="topic" :ref="formFields.topic" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.topic" :label="$t('UNIFI.TOPIC')" :hint="$t('UNIFI.TOPIC_HINT')" :rules="validationRules.topic" />
+      <q-input v-if="hasMqtt" name="topic" :ref="formFields.topic" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.topic" :label="$t('UNIFI.TOPIC')" :hint="$t('UNIFI.TOPIC_HINT')" :rules="validationRules.topic" data-role="none" />
+      <q-banner v-else rounded class="bg-red text-white q-mt-md">
+        {{$t('UNIFI.NEED_MQTT')}}
+      </q-banner>
 
       <div class="text-h5 q-mt-xl self-end">{{$t('UNIFI.CONTROLLER')}}</div>
       <q-separator spaced />
       <q-toggle name="native" :ref="formFields.native" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.native" size="lg" :label="$t('UNIFI.NATIVE_HINT')" />
-      <q-input name="ip" :ref="formFields.ipAddress" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.ipaddress" :label="$t('UNIFI.IP')" :hint="$t('UNIFI.IP_HINT')" :rules="validationRules.ipAddress" />
-      <q-input name="port" :ref="formFields.port" :disable="isSaving || isLoading" :loading="isLoading" v-if="!config.native" v-model="config.port" :label="$t('UNIFI.PORT')" :hint="$t('UNIFI.PORT_HINT')" :rules="validationRules.port" />
-      <q-input name="username" :ref="formFields.username" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.username" :label="$t('UNIFI.USERNAME')" :rules="validationRules.required" :error="loginError" />
-      <q-input name="password" :ref="formFields.password" :disable="isSaving || isLoading" :loading="isLoading" :type="showPassword ? 'password' : 'text'" v-model="config.password" :label="$t('UNIFI.PASSWORD')" :rules="validationRules.required" :error="loginError">
+      <q-input name="ip" :ref="formFields.ipAddress" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.ipaddress" :label="$t('UNIFI.IP')" :hint="$t('UNIFI.IP_HINT')" :rules="validationRules.ipAddress" data-role="none" />
+      <q-input name="port" :ref="formFields.port" :disable="isSaving || isLoading" :loading="isLoading" v-if="!config.native" v-model="config.port" :label="$t('UNIFI.PORT')" :hint="$t('UNIFI.PORT_HINT')" :rules="validationRules.port" data-role="none" />
+      <q-input name="username" :ref="formFields.username" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.username" :label="$t('UNIFI.USERNAME')" :rules="validationRules.required" :error="loginError" data-role="none" />
+      <q-input name="password" :ref="formFields.password" :disable="isSaving || isLoading" :loading="isLoading" :type="showPassword ? 'password' : 'text'" v-model="config.password" :label="$t('UNIFI.PASSWORD')" :rules="validationRules.required" :error="loginError" data-role="none">
         <template v-slot:append>
           <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" class="cursor-pointer" @click="showPassword = !showPassword" />
         </template>
@@ -20,7 +23,7 @@
       <q-select :ref="formFields.site" v-model="config.site" :disable="isSaving || isLoading" :loading="isLoading" emit-value map-options :options="sites" :label="$t('UNIFI.SITE')" />
       <div class="row" v-if="showTwoFactor">
         <div class="col-6">
-          <q-input name="twoFa" :ref="formFields.twoFa" :disable="isSaving || isLoading" :loading="isLoading" type="text" v-model="config.token" :label="$t('UNIFI.TWO_FA')" error="">
+          <q-input name="twoFa" :ref="formFields.twoFa" :disable="isSaving || isLoading" :loading="isLoading" type="text" v-model="config.token" :label="$t('UNIFI.TWO_FA')" error="" data-role="none">
             <template v-slot:append>
               <q-icon name="lock" class="cursor-pointer" />
             </template>
@@ -35,7 +38,10 @@
 
   <div class="row q-pt-md">
     <div class="col-12">
-      <q-btn :loading="isSaving" :disable="!isSaving && isLoading" push color="light-green-7" icon="save" size="md" :label="$t(loginRequired ? 'COMMON.SAVE_AND_LOGIN_BTN' : 'COMMON.SAVE_BTN')" @click="saveSettings" />
+      <q-banner v-if="versionError" rounded class="bg-red text-white q-mt-md">
+        {{$t('COMMON.VERSION_ERROR', {version})}}
+      </q-banner>
+      <q-btn v-else :loading="isSaving" :disable="!isSaving && isLoading" push color="light-green-7" icon="save" size="md" :label="$t(loginRequired ? 'COMMON.SAVE_AND_LOGIN_BTN' : 'COMMON.SAVE_BTN')" @click="saveSettings" />
     </div>
     <q-space />
   </div>
@@ -69,10 +75,13 @@ export default {
     const config = computed(() => store.state.Settings.config);
     const showTwoFactor = computed(() => store.state.Settings.showTwoFactor);
     const loginRequired = computed(() => store.state.Settings.loginRequired);
+    const versionError = computed(() => store.state.Settings.versionError);
+    const version = computed(() => store.state.Settings.version);
     const sites = computed(() => store.state.Settings.sites);
     const loginError = computed(() => store.state.Settings.loginError);
     const isLoading = computed(() => store.state.Global.loading);
-
+    const serviceStatus = computed(() => store.state.Settings.serviceStatus);
+    const hasMqtt = computed(() => serviceStatus.value !== 'NO_MQTT');
     const isSaving = ref(false);
     const formFields = {
       topic: ref(null),
@@ -118,7 +127,10 @@ export default {
       isSaving,
       loginRequired,
       loginError,
-      sites
+      sites,
+      versionError,
+      version,
+      hasMqtt
     };
   }
 };

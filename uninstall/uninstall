@@ -24,3 +24,6 @@ echo "<INFO> Stopping Service"
 npm --prefix $PBIN stop
 npm --prefix $PBIN delete
 exit 0;
+
+echo "<INFO> Unregister Plugin at Express Server"
+curl -X POST http://localhost:3000/system/express/plugin/unifi_presence

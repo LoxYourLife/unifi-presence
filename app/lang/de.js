@@ -2,9 +2,8 @@ export default {
   COMMON: {
     SAVE_BTN: 'Speichern',
     SAVE_AND_LOGIN_BTN: 'Speichern und Einloggen',
-    HINT_SAVE_2FA: 'Bitte gebe dein 2 Faktor Code ein um dich einzuloggen',
     VERSION_ERROR:
-      'Die Version deines UniFi Controller ist kleiner als 6.4.54. Bitte aktualisiere zuerst deinen Controller um das Plugin nutzen zu können. Deine aktuelle Version ist'
+      'Die Version deines UniFi Controller ist kleiner als 6.4.54. Bitte aktualisiere zuerst deinen Controller um das Plugin nutzen zu können. Deine aktuelle Version ist: {version}'
   },
   UNIFI: {
     SETTINGS: 'Einstellungen',
@@ -21,7 +20,7 @@ export default {
     SITE: 'UniFi Site',
     NEED_MQTT: 'Um dises Plugin nutzen zu können, muss das MQTT Gateway Plugin in der Version >= 2.0.4 installiert sein.',
     CLIENTS: 'UniFi WiFi Geräte',
-    NO_CLIENTS: 'Geräte konnen noch nicht angezeigt werden. Bitte stelle zunächst eine Verbindung zum UniFi Controller her.',
+    // NO_CLIENTS: 'Geräte konnen noch nicht angezeigt werden. Bitte stelle zunächst eine Verbindung zum UniFi Controller her.',
     CLIENT_SELECTION:
       'Alle selektierten Geräte werden überwacht und an MQTT übermittelt. Alle anderen Geräte werden ignoriert. Um den Status der Geräte zu erhalten, müssen diese Selektiert werden. Es wird automatisch gespeichert.',
     NAME: 'Name',
@@ -52,7 +51,17 @@ export default {
     DISCONNECTED: 'Nicht Verbunden - Neue Verbindung wird hergestellt',
     UNAUTHORIZED: 'Nicht eingeloggt',
     LOST: 'UniFi Event Service nicht erreichbar',
-    RESTART: 'Restart Service'
+    RESTART: 'Hintergrund Service Neustarten',
+    NO_MQTT: 'Mqtt Plugin ist nicht installiert'
+  },
+
+  SORTING: {
+    STANDARD: 'Standard',
+    SELECTED: 'Selectiert',
+    NAME: 'Name',
+    SSID: 'Wlan SSID',
+    EXPERIENCE: 'Erfahrung',
+    TYPE: 'Typ'
   },
 
   VALIDATION: {

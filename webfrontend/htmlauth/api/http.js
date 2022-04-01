@@ -3,9 +3,7 @@ const path = require('path');
 const fileHandler = require('../utils/fileHandler');
 const requestUtils = require('../utils/requestUtils');
 const UniFi = require(path.resolve(directories.bin, './lib/Unifi.js'));
-const pm2 = require(path.resolve(directories.bin, './node_modules/pm2'));
-const pm2Config = require(path.resolve(directories.bin, './unifi.config.js'));
-
+const { exec } = require('child_process');
 const configFile = `${directories.config}/unifi.json`;
 const subscriptionFile = `${directories.config}/mqtt_subscriptions.cfg`;
 let config = require(configFile);
@@ -33,7 +31,7 @@ const saveConfig = requestUtils.unifiRequestWithError(config, async (req, res) =
   uniFi.setConfig(config);
 
   if (hasMqttTopicChanged) {
-    await fileHandler.write(subscriptionFile, config.topic);
+    await fileHandler.write(subscriptionFile, `${config.topic}/#`);
   }
 
   if (loginRequired) await uniFi.login(token);
@@ -44,6 +42,9 @@ const saveConfig = requestUtils.unifiRequestWithError(config, async (req, res) =
 const getStats = (_) =>
   requestUtils.unifiRequestWithError(config, async (req, res) => {
     const version = await uniFi.getVersion();
+    if (version < '6.4.54') {
+      return res.json({ version, versionError: true });
+    }
     const health = await uniFi.health();
     const healthData = _.get(health, 'data', []);
     const www = _.find(healthData, (d) => _.get(d, 'subsystem', '') === 'www');
@@ -51,6 +52,7 @@ const getStats = (_) =>
 
     res.json({
       version,
+      versionError: false,
       wan: {
         name: _.get(wan, 'gw_name', ''),
         status: _.get(wan, 'status', ''),
@@ -75,7 +77,7 @@ const getSites = requestUtils.unifiRequestWithError(config, async (req, res) => 
 
 const restartService = async (req, res) => {
   const prom = new Promise((resolve, reject) => {
-    pm2.restart(pm2Config[0], (error) => {
+    exec(`npm --prefix ${directories.bin} restart`, (error) => {
       if (error) reject(error);
       else resolve();
     });

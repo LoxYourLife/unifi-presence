@@ -26,8 +26,6 @@ const onUpgrade = (app) => (req, sock, head) => {
     app.handle(req, new http.ServerResponse(req), () => {
       if (!req.wsHandled) {
         sock.destroy();
-      } else {
-        websocket.emit('open');
       }
     });
   });
@@ -47,10 +45,10 @@ const addWsToRouter = (router) => {
       if (_.isNil(req.ws)) {
         return next();
       }
-
       req.wsHandled = true;
       try {
         handler(req.ws, req, () => {});
+        req.ws.emit('open');
         next();
       } catch (error) {
         next(error);

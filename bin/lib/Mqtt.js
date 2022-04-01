@@ -3,8 +3,11 @@ const _ = require('lodash');
 
 module.exports = class Mqtt {
   constructor(globalConfig) {
+    this.setConfig(globalConfig);
+  }
+
+  setConfig(globalConfig) {
     this.config = _.get(globalConfig, 'Mqtt', null);
-    this.connect();
   }
 
   connect() {

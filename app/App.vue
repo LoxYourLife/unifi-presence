@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh lpR fFf" class="bg-grey-1">
+  <q-layout view="hHh lpR fFf">
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -34,7 +34,8 @@ export default {
     let pingInterval = null;
 
     const connectToSocket = () => {
-      const socket = new WebSocket(`ws://${document.location.hostname}:3000/plugins/unifi_presence/api/socket`, 'webClient');
+      const url = `ws://${document.location.hostname}:3000/plugins/unifi_presence/api/socket`;
+      const socket = new WebSocket(url, 'webClient');
       socket.onopen = (event) => {
         pingInterval = setInterval(() => socket.send('ping'), 20000);
       };
@@ -51,7 +52,6 @@ export default {
       };
       socket.onclose = () => {
         clearInterval(pingInterval);
-        console.log('lost Connection');
         setTimeout(connectToSocket, 5000);
       };
     };

@@ -1,9 +1,9 @@
 <template>
-  <div class="q-pa-md">
+  <div class="q-pa-s,">
     <div class="q-gutter-y-md bg-light-green-7">
-      <q-tabs inline-label class="text-grey-3 bg-light-green-6" active-color="white bg-light-green-7" indicator-color="light-green-9" align="justify">
-        <q-route-tab name="mails" :to="{name: 'settings'}" icon="settings" :label="$t('UNIFI.SETTINGS')" />
-        <q-route-tab name="alarms" :to="{name: 'clients'}" icon="router" :label="$t('UNIFI.DEVICES')" />
+      <q-tabs inline-label dense class="text-grey-3 bg-light-green-6" active-color="white bg-light-green-7" indicator-color="light-green-9" align="justify">
+        <q-route-tab name="mails" :to="{name: 'settings'}" icon="settings" :label="$t('UNIFI.SETTINGS')" data-role="none" />
+        <q-route-tab name="alarms" :to="{name: 'clients'}" icon="router" :label="$t('UNIFI.DEVICES')" data-role="none" />
       </q-tabs>
     </div>
   </div>
@@ -19,6 +19,14 @@
     </div>
   </q-page>
 </template>
+<style>
+.q-tab--inactive {
+  color: #eee !important;
+}
+.q-tab__content--inline .q-tab__label {
+  text-shadow: none !important;
+}
+</style>
 <script>
 import UnifiController from './UnifiController.vue';
 export default {

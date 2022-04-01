@@ -35,4 +35,7 @@ npm --prefix $PBIN ci --only=production
 echo "<INFO> Start Event App"
 npm --prefix $PBIN start
 
+echo "<INFO> Register Plugin at Express Server"
+curl -X POST http://localhost:3000/system/express/plugin/unifi_presence
+
 exit 0;

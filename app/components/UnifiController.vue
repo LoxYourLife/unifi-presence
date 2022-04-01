@@ -9,6 +9,7 @@
         <q-item v-if="!connected">
           <q-item-section>
             <div class="text-h6">{{$t(`SERVICE.${serviceStatus}`)}}</div>
+            <div v-if="versionError" class="text-weight-medium text-negative">{{$t('COMMON.VERSION_ERROR', {version})}}</div>
             <div v-if="loginRequired" class="text-subtitle2">{{$t('UNIFI.LOGIN_REQUIRED')}}</div>
             <div v-if="error" class="text-weight-medium text-negative">{{error}}</div>
           </q-item-section>
@@ -44,7 +45,7 @@
     </q-card-section>
     <q-separator />
     <q-card-actions>
-      <q-btn class="q-ml-md" outline icon="restart_alt" size="sm" color="orange-14" :loading="restartLoading" @click="restartService">{{$t('SERVICE.RESTART')}}</q-btn>
+      <q-btn class="q-ml-md" outline icon="restart_alt" size="sm" color="orange-14" :loading="restartLoading" @click="restartService" data-role="none">{{$t('SERVICE.RESTART')}}</q-btn>
     </q-card-actions>
   </q-card>
 </template>
@@ -62,6 +63,7 @@ export default {
     const isLoading = computed(() => store.state.Global.loading);
     const loginRequired = computed(() => store.state.Settings.loginRequired);
     const version = computed(() => store.state.Settings.version);
+    const versionError = computed(() => store.state.Settings.versionError);
     const stats = computed(() => store.state.Settings.stats);
     const serviceStatus = computed(() => store.state.Settings.serviceStatus);
     const error = computed(() => store.state.Global.error);
@@ -70,7 +72,7 @@ export default {
       if (loginRequired.value || error.value || connectionError.value) {
         return false;
       }
-      if (version.value === null) {
+      if (version.value === null || version.value < '6.4.54') {
         return false;
       }
       if (!config.value.username || !config.value.ipaddress || !config.value.password) {
@@ -102,6 +104,7 @@ export default {
     return {
       isLoading,
       version,
+      versionError,
       loginRequired,
       error,
       connected,

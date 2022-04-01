@@ -1,5 +1,8 @@
 <template>
-  <div class="row">
+  <q-banner v-if="versionError" rounded class="bg-red text-white q-mt-md">
+    {{$t('COMMON.VERSION_ERROR', {version})}}
+  </q-banner>
+  <div class="row" v-if="!versionError">
     <div class="col-12">
       <div class="text-h5 self-end">{{ $t('UNIFI.DEVICES') }}</div>
       <q-separator spaced />
@@ -77,13 +80,17 @@ import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import actionStore from '../store/actions';
 import { lowerCase, orderBy } from 'lodash';
+import { useI18n } from 'vue-i18n/index';
 
 export default {
   name: 'Clients',
   setup() {
+    const { t } = useI18n({ useScope: 'global' });
     const store = useStore();
 
-    store.dispatch(actionStore.actionTypes.LOAD_CLIENTS);
+    const versionError = computed(() => store.state.Settings.versionError);
+    const version = computed(() => store.state.Settings.version);
+    if (versionError.value === false) store.dispatch(actionStore.actionTypes.LOAD_CLIENTS);
 
     const isLoading = computed(() => store.state.Global.loading);
     const clients = computed(() => {
@@ -107,6 +114,8 @@ export default {
         return true;
       });
 
+      if (sorting.value === 'standard') return filtered;
+
       const order = ['signalPercentage', 'watched'].includes(sorting.value) ? 'desc' : 'asc';
       return orderBy(filtered, [sorting.value], [order]);
     });
@@ -122,13 +131,14 @@ export default {
     const showOffline = ref(true);
     const showWired = ref(true);
     const search = ref('');
-    const sorting = ref('watched');
+    const sorting = ref('standard');
     const sortOptions = [
-      { label: 'Selectiert', value: 'watched' },
-      { label: 'Name', value: 'name' },
-      { label: 'Wlan SSID', value: 'ssid' },
-      { label: 'Erfahrung', value: 'signalPercentage' },
-      { label: 'Typ', value: 'type' }
+      { label: t('SORTING.STANDARD'), value: 'standard' },
+      { label: t('SORTING.SELECTED'), value: 'watched' },
+      { label: t('SORTING.NAME'), value: 'name' },
+      { label: t('SORTING.SSID'), value: 'ssid' },
+      { label: t('SORTING.EXPERIENCE'), value: 'signalPercentage' },
+      { label: t('SORTING.TYPE'), value: 'type' }
     ];
     return {
       isLoading,
@@ -140,7 +150,9 @@ export default {
       showWired,
       search,
       sorting,
-      sortOptions
+      sortOptions,
+      versionError,
+      version
     };
   }
 };

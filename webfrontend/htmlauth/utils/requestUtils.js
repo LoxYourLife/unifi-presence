@@ -24,7 +24,7 @@ const unifiRequestWithError = (config, executable) => async (req, res) => {
     } else if (e instanceof Unauthorized) {
       config.twoFaEnabled = false;
       await fileHandler.writeJson(configFile, config);
-      res.status(401);
+      res.status(403);
       return res.end();
     } else if (e instanceof Timeout) {
       res.status(408);

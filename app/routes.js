@@ -4,7 +4,8 @@ import Clients from './components/Clients.vue';
 import NotFound from './components/NotFound.vue';
 export default [
   {
-    path: '/admin/plugins/unifi_presence',
+    base: '/admin/plugins/unifi_presence',
+    path: '/',
     component: Page,
     children: [
       { name: 'settings', path: '', component: Settings },

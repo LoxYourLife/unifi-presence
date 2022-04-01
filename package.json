@@ -16,7 +16,8 @@
     "dev:clients": "LBHOMEDIR=$(pwd)/loxberry nodemon -w bin bin/index.js --dev clients",
     "dev:events": "LBHOMEDIR=$(pwd)/loxberry nodemon -w bin bin/index.js --dev events",
     "lint": "eslint bin",
-    "prettify": "prettier --write bin"
+    "prettify": "prettier --write bin",
+    "zip": "rm unifi_presence.zip && zip -r unifi_presence.zip . -x \".git/*\" -x \"node_modules/*\" -x \"loxberry/*\" -x \"coverage/*\" -x \"build/*\" -x \"bin/node_modules/*\""
   },
   "type": "commonjs",
   "author": "Ronald Marske",
