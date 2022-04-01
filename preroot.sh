@@ -47,7 +47,7 @@ PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
 echo "<INFO> Checking for express Plugin"
-REQUIRED_VERSION="0.0.1"
+REQUIRED_VERSION="0.0.2"
 EXPRESS=$(perl -e "use LoxBerry::System;print !LoxBerry::System::plugindata("express") ? 1 : LoxBerry::System::pluginversion('express') ge '$REQUIRED_VERSION' ? 0 : 2;exit;")
 if [ $EXPRESS = "1" ]
 then
