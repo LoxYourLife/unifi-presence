@@ -15,11 +15,13 @@
     "restart": "PM2_HOME=$(pwd)/.pm2 pm2 restart unifi.config.js"
   },
   "dependencies": {
-    "axios": "0.23.0",
+    "axios": "0.26.1",
+    "follow-redirects": ">=1.14.8",
     "lodash": "4.17.21",
-    "mqtt": "4.2.8",
-    "pm2": "5.1.2",
-    "ws": "8.2.3"
+    "minimist": ">=1.2.6",
+    "mqtt": "4.3.7",
+    "pm2": "5.2.0",
+    "ws": "8.5.0"
   },
   "author": "",
   "license": "ISC"
