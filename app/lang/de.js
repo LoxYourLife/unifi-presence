@@ -43,7 +43,10 @@ export default {
     SHOW_WIFI: 'Wifi anzeigen',
     SHOW_OFFLINE: 'Zeige Offline',
     SORT: 'Sortierung',
-    SEARCH: 'Suche'
+    SEARCH: 'Suche',
+    ANDROID_DEVICES:
+      'Es befinden sich Android Geräte in der Liste. Andoid neigt dazu eine zufällige Mac Adresse zu vergeben. Ist dieses Feature aktiviert, dann kann das Plugin keine eindeutige zuweisung des Gerätes vornehmen und die Erkennung des Gerätes funktioniert nicht. Das müsste dann deaktiviert werden.',
+    ANDROID_DEVICE_LINK: 'Hinweise zum Deaktivieren'
   },
   SERVICE: {
     WAIT_FOR_CONFIG: 'Konfigurationsfehler, wartet auf Änderungen',

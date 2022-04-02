@@ -102,6 +102,7 @@ module.exports = class UniFiSocket extends UniFi {
       //console.log(relevantDevices, event.meta.message);
       switch (event.meta.message) {
         case 'client:sync':
+        case 'sta:sync':
           return this.syncMessage(relevantDevices);
         case 'events':
           return this.eventMessage(relevantDevices);
@@ -121,10 +122,10 @@ module.exports = class UniFiSocket extends UniFi {
       const client = this.clients.get(event.mac);
       const cloned = _.clone(client);
 
-      client.ap = await this.getAccessPoint(isWireless ? event.ap_mac : event.gw_mac);
+      client.ap = await this.getAccessPoint(event.ap_mac || event.gw_mac);
       client.ip = event.ip;
 
-      if (event.type === 'WIRELESS') {
+      if (isWireless) {
         client.ssid = event.essid;
         client.experience = event.wifi_experience_score;
         client.connected = !client.connected ? true : client.connected;
@@ -152,7 +153,6 @@ module.exports = class UniFiSocket extends UniFi {
       if (!_.isEqual(client, cloned)) {
         this.send(client);
         this.clients.set(event.mac, client);
-        console.log(client);
       }
     });
   }
@@ -205,7 +205,7 @@ module.exports = class UniFiSocket extends UniFi {
 
   send(client) {
     const name = client.name.replace(/[^a-z0-9]+/gi, '-');
-    //console.log(`Send status update for device: ${client.name}`);
+    console.log(`Send status update for device: ${client.name}`);
     this.mqtt.send(`${this.config.topic}/${name}`, JSON.stringify(client));
   }
 };

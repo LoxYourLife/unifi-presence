@@ -7,6 +7,17 @@
       <div class="text-h5 self-end">{{ $t('UNIFI.DEVICES') }}</div>
       <q-separator spaced />
       <p>{{$t('UNIFI.CLIENT_SELECTION')}}</p>
+
+      <q-banner v-if="hasAndroid" dense rounded class="bg-orange-13 text-white q-my-md">
+        <template v-slot:avatar>
+          <q-icon name="warning" color="white" />
+        </template>
+        <template v-slot:action>
+          <q-btn flat color="white" :label="$t('UNIFI.ANDROID_DEVICE_LINK')" href="https://www.hotsplots.de/fileadmin/Daten/Support/Downloads/Kurzanleitung_MAC-Adresse.pdf" target="_blank" />
+        </template>
+        {{$t('UNIFI.ANDROID_DEVICES')}}
+      </q-banner>
+
       <div class="row">
         <div class="col-3">
           <q-input clearable bottom-slots v-model="search" :label="$t('UNIFI.SEARCH')" dense>
@@ -119,6 +130,11 @@ export default {
       const order = ['signalPercentage', 'watched'].includes(sorting.value) ? 'desc' : 'asc';
       return orderBy(filtered, [sorting.value], [order]);
     });
+
+    const hasAndroid = computed(() => {
+      const clients = store.state.Settings.clients;
+      return clients.filter((client) => /google/i.test(client.system)).length > 0;
+    });
     const wifiIcon = (signal) => {
       if (signal > 77) return 'wifi';
       else if (signal > 33) return 'wifi_2_bar';
@@ -152,7 +168,8 @@ export default {
       sorting,
       sortOptions,
       versionError,
-      version
+      version,
+      hasAndroid
     };
   }
 };

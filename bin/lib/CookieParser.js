@@ -88,7 +88,6 @@ module.exports = class CookieParser {
   }
 
   async save() {
-    await fs.promises.access(this.storageFile, fs.constants.R_OK | fs.constants.W_OK);
     const data = JSON.stringify(_.map(this.cookies, (cookie) => cookie.toObject()));
     const fileHandle = await fs.promises.open(this.storageFile, 'w+');
     await fileHandle.writeFile(data, 'UTF-8');
@@ -96,21 +95,24 @@ module.exports = class CookieParser {
   }
 
   async load() {
-    await fs.promises.access(this.storageFile, fs.constants.R_OK | fs.constants.W_OK);
-    const fileHandle = await fs.promises.open(this.storageFile, 'r');
-    const filecontent = await fileHandle.readFile();
-    await fileHandle.close();
-    const cookies = JSON.parse(filecontent);
+    try {
+      await fs.promises.access(this.storageFile, fs.constants.R_OK | fs.constants.W_OK);
+      const fileHandle = await fs.promises.open(this.storageFile, 'r');
+      const filecontent = await fileHandle.readFile();
+      await fileHandle.close();
+      const cookies = JSON.parse(filecontent);
 
-    if (_.isArray(cookies)) {
-      const loadedCookies = _.map(cookies, (cookie) => new Cookie(cookie));
-      loadedCookies.forEach((cookie) => {
-        this.cookies[cookie.name] = cookie;
-      });
-      return;
+      if (_.isArray(cookies)) {
+        const loadedCookies = _.map(cookies, (cookie) => new Cookie(cookie));
+        loadedCookies.forEach((cookie) => {
+          this.cookies[cookie.name] = cookie;
+        });
+        return;
+      }
+    } catch {
+      this.cookies = {};
+      await this.save();
     }
-    this.cookies = {};
-    throw Error('Cookies cannot be loaded');
   }
   async reset() {
     this.cookies = {};

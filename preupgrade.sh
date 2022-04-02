@@ -33,6 +33,7 @@ cp -p -v -r $PCONFIG $PTEMPL\_upgrade/data
 echo "<INFO> Stopping Service"
 npm --prefix $PBIN stop
 npm --prefix $PBIN delete
+kill -9 $(pgrep -f $PBIN/.pm2)
 
 # Exit with Status 0
 exit 0

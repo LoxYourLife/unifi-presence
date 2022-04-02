@@ -11,6 +11,7 @@ const { LOGIN, DEVICES, HEALTH, SYSINFO, ACTIVE_CLIENTS, HISTORY_CLIENTS, EVENTS
 const convertClient = (client) => {
   const data = {
     name: client.display_name || client.name || client.oui || 'unbekannt',
+    system: client.oui,
     mac: client.mac,
     type: client.type,
     userId: client.user_id,
@@ -137,6 +138,7 @@ module.exports = class UniFi {
     const loginUrl = this.getUrl(LOGIN);
     try {
       const response = await this.axios.post(loginUrl, data, { timeout: 3000 });
+      console.log(response.headers);
       this.cookieParser.parseAndAdd(response.headers['set-cookie']);
       this.cookieParser.save();
 
@@ -179,9 +181,9 @@ module.exports = class UniFi {
   async getActiveClients() {
     return doAndHandleError(async () => {
       const activeUrl = this.getUrl(ACTIVE_CLIENTS);
-      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize(), timeout: 10000 } });
       const historyUrl = this.getUrl(HISTORY_CLIENTS);
-      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize(), timeout: 10000 } });
       return [...activeResponse.data, ...historyResponse.data].map(convertClient);
     });
   }
