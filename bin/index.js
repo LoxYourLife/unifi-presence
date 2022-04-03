@@ -93,6 +93,11 @@ const listenToEvents = async () => {
   }
 };
 
+const ping = () => {
+  if (socket && socket.readyState === ws.OPEN) {
+    socket.send('ping');
+  }
+};
 const openSocket = () => {
   try {
     socket = new ws.WebSocket('ws://localhost:3000/plugins/unifi_presence/api/socket');
@@ -103,7 +108,7 @@ const openSocket = () => {
     setTimeout(openSocket, 5000);
     return;
   }
-  pingInterval = setInterval(() => socket.send('ping'), 20000);
+  pingInterval = setInterval(ping, 20000);
   socket.on('open', () => {
     setTimeout(() => sendStatus(currentState), 1000);
   });
