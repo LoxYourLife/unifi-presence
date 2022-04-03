@@ -61,7 +61,7 @@ const listenToEvents = async () => {
   console.log('start listening to events');
   try {
     await uniFi.setup();
-    await uniFi.getVersion();
+    await uniFi.getSysinfo();
     sendStatus(states.CONNECTED);
     await uniFi.openClientEvents(config.clients);
   } catch (error) {
@@ -87,6 +87,7 @@ const listenToEvents = async () => {
       console.log('No Network, retry in 10 seconds');
       return new Promise((resolve) => setTimeout(resolve, 10000));
     }
+    console.error(error);
     sendStatus(states.WAIT_FOR_CONFIG);
     return waitForConfigChange(configFile);
   }

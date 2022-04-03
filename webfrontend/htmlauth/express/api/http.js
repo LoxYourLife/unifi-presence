@@ -9,7 +9,6 @@ const subscriptionFile = `${directories.config}/mqtt_subscriptions.cfg`;
 let config = require(configFile);
 
 const uniFi = new UniFi({ config, directories });
-uniFi.setup();
 
 const index = async (req, res) => res.render('index', { title: 'Unifi Presence' });
 
@@ -41,7 +40,7 @@ const saveConfig = requestUtils.unifiRequestWithError(config, async (req, res) =
 
 const getStats = (_) =>
   requestUtils.unifiRequestWithError(config, async (req, res) => {
-    const version = await uniFi.getVersion();
+    const { version, deviceType } = await uniFi.getSysinfo();
     if (version < '6.4.54') {
       return res.json({ version, versionError: true });
     }
@@ -53,6 +52,7 @@ const getStats = (_) =>
     res.json({
       version,
       versionError: false,
+      deviceType,
       wan: {
         name: _.get(wan, 'gw_name', ''),
         status: _.get(wan, 'status', ''),

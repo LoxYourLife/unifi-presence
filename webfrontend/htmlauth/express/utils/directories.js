@@ -10,9 +10,9 @@ module.exports = () => {
     };
   }
   return {
-    config: path.join(__dirname, '../../../config'),
-    data: path.join(__dirname, '../../../data'),
-    bin: path.join(__dirname, '../../../bin'),
-    homedir: path.join(__dirname, '../../../loxberry')
+    config: path.join(__dirname, '../../../../config'),
+    data: path.join(__dirname, '../../../../data'),
+    bin: path.join(__dirname, '../../../../bin'),
+    homedir: path.join(__dirname, '../../../../loxberry')
   };
 };

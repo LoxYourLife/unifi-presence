@@ -28,7 +28,7 @@ mkdir -p $PTEMPL\_upgrade/log
 
 echo "<INFO> Backing up existing config files"
 cp -p -v -r $PCONFIG $PTEMPL\_upgrade/config
-cp -p -v -r $PCONFIG $PTEMPL\_upgrade/data
+cp -p -v -r $PDATA $PTEMPL\_upgrade/data
 
 echo "<INFO> Stopping Service"
 npm --prefix $PBIN stop

@@ -66,7 +66,7 @@ const createServer = async () => {
     }
     return translate(context);
   };
-  const module = require(path.resolve(__dirname, '../webfrontend/htmlauth/express.js'));
+  const module = require(path.resolve(__dirname, '../webfrontend/htmlauth/express/express.js'));
   const plugin = module({
     router: addWsToRouter(express.Router()),
     expressStatic: express.static,
@@ -74,7 +74,8 @@ const createServer = async () => {
     _,
     translate
   });
-  app.use('/plugins/unifi_presence', async (req, res, next) => {
+
+  const pluginRenderer = async (req, res, next) => {
     const originalRender = res.render;
 
     res.render = (view, options, fn) => {
@@ -86,7 +87,9 @@ const createServer = async () => {
       originalRender.call(res, view, options, fn);
     };
     await plugin(req, res, next);
-  });
+  };
+  app.use('/plugins/unifi_presence/express', pluginRenderer);
+  app.use('/plugins/unifi_presence', pluginRenderer);
   app.use('/plugins/unifi_presence', express.static(path.resolve(__dirname, '../webfrontend/htmlauth/')));
 
   app.get('*', (req, res, next) => {

@@ -34,7 +34,7 @@ module.exports = defineConfig(({ command, mode }) => {
       base: '/admin/plugins/unifi_presence/',
       port: 9000,
       proxy: {
-        '/admin/plugins/unifi_presence/api': {
+        '/admin/plugins/unifi_presence/express/api': {
           target: 'http://localhost:3000/',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/admin/, '')

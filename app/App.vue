@@ -48,6 +48,8 @@ export default {
             return store.commit(settingsStore.mutationTypes.STORE_STATS, event.data);
           case 'serviceStatus':
             return store.commit(settingsStore.mutationTypes.SET_SERVICE_STATUS, event.data.status);
+          case 'device:sync':
+            return store.commit(settingsStore.mutationTypes.SYNC_DEVICE, event.data);
         }
       };
       socket.onclose = () => {

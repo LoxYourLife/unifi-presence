@@ -24,6 +24,6 @@ echo "<INFO> installing bin dependencies"
 npm --prefix $PBIN ci --only=production
 
 echo "<INFO> copy .htaccess"
-cp webfrontend/htmlauth/.htaccess $PHTMLAUTH/.htaccess
+cp webfrontend/htmlauth/express/.htaccess $PHTMLAUTH/express/.htaccess
 
 exit 0;

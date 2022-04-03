@@ -7,5 +7,6 @@
   "native": true,
   "port": null,
   "twoFaEnabled": false,
+  "wiredTimeout": 30,
   "clients": []
 }

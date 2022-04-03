@@ -1,6 +1,6 @@
 <template>
   <q-card class="my-card">
-    <q-img :src="udm" spinner-color="white" />
+    <q-img :src="image" spinner-color="white" />
     <q-card-actions v-if="isLoading" align="center">
       <q-spinner color="primary" size="3em" class="q-mb-md" />
     </q-card-actions>
@@ -55,6 +55,7 @@ import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
 import actionsStore from '../store/actions';
 import udm from '../assets/udm.png';
+import udmpro from '../assets/udmpro.png';
 export default {
   name: 'UnifiController',
   setup() {
@@ -64,6 +65,7 @@ export default {
     const loginRequired = computed(() => store.state.Settings.loginRequired);
     const version = computed(() => store.state.Settings.version);
     const versionError = computed(() => store.state.Settings.versionError);
+    const deviceType = computed(() => store.state.Settings.deviceType);
     const stats = computed(() => store.state.Settings.stats);
     const serviceStatus = computed(() => store.state.Settings.serviceStatus);
     const error = computed(() => store.state.Global.error);
@@ -101,6 +103,12 @@ export default {
       restartLoading.value = false;
     };
 
+    const image = computed(() => {
+      const device = deviceType.value || '';
+      if (device.toLowerCase().indexOf('pro') != -1) return udmpro;
+      return udm;
+    });
+
     return {
       isLoading,
       version,
@@ -114,7 +122,7 @@ export default {
       serviceStatus,
       restartLoading,
       restartService,
-      udm
+      image
     };
   }
 };

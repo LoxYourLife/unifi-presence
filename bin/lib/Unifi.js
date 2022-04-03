@@ -63,14 +63,14 @@ module.exports = class UniFi {
       httpsAgent: new https.Agent({
         rejectUnauthorized: false
       }),
-      timeout: 3000
+      timeout: 2000
     });
 
     this.devices = null;
   }
 
   async setup() {
-    return this.cookieParser.load();
+    return this.cookieParser.ensureLoad();
   }
 
   setConfig(config) {
@@ -138,7 +138,6 @@ module.exports = class UniFi {
     const loginUrl = this.getUrl(LOGIN);
     try {
       const response = await this.axios.post(loginUrl, data, { timeout: 3000 });
-      console.log(response.headers);
       this.cookieParser.parseAndAdd(response.headers['set-cookie']);
       this.cookieParser.save();
 
@@ -163,6 +162,7 @@ module.exports = class UniFi {
   }
 
   async health() {
+    await this.setup();
     const url = this.getUrl(HEALTH);
     return doAndHandleError(async () => {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
@@ -170,34 +170,41 @@ module.exports = class UniFi {
     });
   }
 
-  async getVersion() {
+  async getSysinfo() {
+    await this.setup();
     const url = this.getUrl(SYSINFO);
     return doAndHandleError(async () => {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
-      return _.get(response, 'data.data.0.version', 0);
+      return {
+        version: _.get(response, 'data.data.0.version', 0),
+        deviceType: _.get(response, 'data.data.0.ubnt_device_type', null)
+      };
     });
   }
 
   async getActiveClients() {
+    await this.setup();
     return doAndHandleError(async () => {
       const activeUrl = this.getUrl(ACTIVE_CLIENTS);
-      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize(), timeout: 10000 } });
+      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() }, timeout: 10000 });
       const historyUrl = this.getUrl(HISTORY_CLIENTS);
-      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize(), timeout: 10000 } });
+      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() }, timeout: 10000 });
       return [...activeResponse.data, ...historyResponse.data].map(convertClient);
     });
   }
 
   async getDevices() {
+    await this.setup();
     return doAndHandleError(async () => {
       const deviceUrl = this.getUrl(DEVICES);
-      const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() }, timout: 5000 });
       this.devices = response.data.data.map(convertDevice);
       return this.devices;
     });
   }
 
   async getAccessPoint(mac) {
+    await this.setup();
     let forceLoad = true;
     if (this.devices === null) {
       await this.getDevices();
@@ -214,6 +221,7 @@ module.exports = class UniFi {
   }
 
   async getSites() {
+    await this.setup();
     return doAndHandleError(async () => {
       const siteUrl = this.getUrl(SITES);
       const response = await this.axios.get(siteUrl, { headers: { cookie: this.cookieParser.serialize() } });

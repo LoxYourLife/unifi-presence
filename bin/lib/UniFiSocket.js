@@ -121,7 +121,7 @@ module.exports = class UniFiSocket extends UniFi {
       const isWireless = event.type === 'WIRELESS';
       const client = this.clients.get(event.mac);
       const cloned = _.clone(client);
-
+      const wiredTimeout = (this.config.wiredTimeout || 30) * 1000;
       client.ap = await this.getAccessPoint(event.ap_mac || event.gw_mac);
       client.ip = event.ip;
 
@@ -130,7 +130,7 @@ module.exports = class UniFiSocket extends UniFi {
         client.experience = event.wifi_experience_score;
         client.connected = !client.connected ? true : client.connected;
 
-        if (event.signal) {
+        if (event.signal && client.connected) {
           client.signalDbm = event.signal;
           client.signalPercentage = wifiSignalPercentage[event.signal];
         } else {
@@ -145,7 +145,7 @@ module.exports = class UniFiSocket extends UniFi {
           this.wired.set(event.mac, wiredClient);
 
           client.connected = true;
-        } else if (new Date() - wiredClient.lastChanged > 40000) {
+        } else if (new Date() - wiredClient.lastChanged > wiredTimeout) {
           client.connected = false;
         }
       }
@@ -161,15 +161,18 @@ module.exports = class UniFiSocket extends UniFi {
     await relevantDevices.forEach(async (event) => {
       const client = this.clients.get(event.user);
       const cloned = _.clone(client);
-      if (client.type === 'WIRELESS') {
-        client.ssid = event.ssid;
-        client.ap = await this.getAccessPoint(event.ap);
-      }
 
       if (event.key === ['EVT_WU_Connected', 'EVT_LU_Connected'].includes(event.key)) {
         client.connected = true;
+        if (client.type === 'WIRELESS') {
+          client.ssid = event.ssid;
+          client.ap = await this.getAccessPoint(event.ap);
+        }
       } else if (event.key === 'EVT_WU_Disconnected') {
         client.connected = false;
+        client.signalDbm = -100;
+        client.signalPercentage = 0;
+        client.ssid = null;
       }
 
       if (!_.isEqual(client, cloned)) {
@@ -207,5 +210,9 @@ module.exports = class UniFiSocket extends UniFi {
     const name = client.name.replace(/[^a-z0-9]+/gi, '-');
     console.log(`Send status update for device: ${client.name}`);
     this.mqtt.send(`${this.config.topic}/${name}`, JSON.stringify(client));
+
+    if (this.externalSocket && this.externalSocket.readyState === ws.OPEN) {
+      this.externalSocket.send(JSON.stringify({ type: 'device:sync', data: client }));
+    }
   }
 };

@@ -2,12 +2,13 @@
 
   <div class="row">
     <div class="col-12">
-      <div class="text-h5 self-end">{{ $t('UNIFI.MQTT_SETTINGS') }}</div>
+      <div class="text-h5 self-end">{{ $t('UNIFI.PLUGIN_SETTINGS') }}</div>
       <q-separator spaced />
       <q-input v-if="hasMqtt" name="topic" :ref="formFields.topic" :disable="isSaving || isLoading" :loading="isLoading" v-model="config.topic" :label="$t('UNIFI.TOPIC')" :hint="$t('UNIFI.TOPIC_HINT')" :rules="validationRules.topic" data-role="none" />
       <q-banner v-else rounded class="bg-red text-white q-mt-md">
         {{$t('UNIFI.NEED_MQTT')}}
       </q-banner>
+      <q-select :ref="formFields.wiredTimeout" v-model="config.wiredTimeout" :disable="isSaving || isLoading" :loading="isLoading" emit-value map-options :options="wiredTimeoutOptions" :label="$t('UNIFI.TIMEOUT_OPTIONS')" :hint="$t('UNIFI.TIMEOUT_OPTIONS_HINT')" />
 
       <div class="text-h5 q-mt-xl self-end">{{$t('UNIFI.CONTROLLER')}}</div>
       <q-separator spaced />
@@ -83,6 +84,18 @@ export default {
     const serviceStatus = computed(() => store.state.Settings.serviceStatus);
     const hasMqtt = computed(() => serviceStatus.value !== 'NO_MQTT');
     const isSaving = ref(false);
+    const wiredTimeoutOptions = [
+      { label: t('TIMEOUT_OPTIONS.SECONDS', { count: 10 }), value: 10 },
+      { label: t('TIMEOUT_OPTIONS.SECONDS', { count: 20 }), value: 20 },
+      { label: t('TIMEOUT_OPTIONS.SECONDS', { count: 30 }), value: 30 },
+      { label: t('TIMEOUT_OPTIONS.SECONDS', { count: 40 }), value: 40 },
+      { label: t('TIMEOUT_OPTIONS.SECONDS', { count: 50 }), value: 50 },
+      { label: t('TIMEOUT_OPTIONS.MINUTES', { count: 1 }), value: 60 },
+      { label: t('TIMEOUT_OPTIONS.MINUTES', { count: 2 }), value: 120 },
+      { label: t('TIMEOUT_OPTIONS.MINUTES', { count: 3 }), value: 180 },
+      { label: t('TIMEOUT_OPTIONS.MINUTES', { count: 4 }), value: 240 },
+      { label: t('TIMEOUT_OPTIONS.MINUTES', { count: 5 }), value: 300 }
+    ];
     const formFields = {
       topic: ref(null),
       native: ref(null),
@@ -91,7 +104,8 @@ export default {
       username: ref(null),
       password: ref(null),
       twoFa: ref(null),
-      site: ref(null)
+      site: ref(null),
+      wiredTimeout: ref(null)
     };
     const saveSettings = async () => {
       const fields = Object.values(formFields).filter((field) => field.value && field.value.validate);
@@ -130,7 +144,8 @@ export default {
       sites,
       versionError,
       version,
-      hasMqtt
+      hasMqtt,
+      wiredTimeoutOptions
     };
   }
 };

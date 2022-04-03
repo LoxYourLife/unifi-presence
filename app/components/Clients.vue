@@ -65,7 +65,7 @@
               <td>{{client.name}}</td>
               <td>{{client.mac}}</td>
               <td>{{client.ssid}}</td>
-              <td v-if="client.type === 'WIRELESS' && client.experience">
+              <td v-if="client.type === 'WIRELESS' && client.signalDbm > -100">
                 {{client.experience}}
                 <q-icon class="float-right" :name="wifiIcon(client.signalPercentage)" size="22px" />
               </td>

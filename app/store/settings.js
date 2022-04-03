@@ -22,7 +22,8 @@ const mutationTypes = {
   SET_CLIENTS: 'setClients',
   SET_CONFIG_CLIENTS: 'setConfigClients',
   SET_SERVICE_STATUS: 'setServiceStatus',
-  SET_SITES: 'setSites'
+  SET_SITES: 'setSites',
+  SYNC_DEVICE: 'syncDevice'
 };
 
 const state = () => ({
@@ -71,7 +72,7 @@ const catchAndHandleError = async (context, executable) => {
 const actions = {
   async [actionTypes.LOAD_CONFIG](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/api/config');
+      const response = await axios.get('/admin/plugins/unifi_presence/express/api/config');
       context.commit(mutationTypes.STORE_CONFIG, response.data);
     });
   },
@@ -80,7 +81,7 @@ const actions = {
     context.commit(mutationTypes.SET_LOGIN_ERROR, false);
     return catchAndHandleError(context, async () => {
       const response = await axios.put(
-        '/admin/plugins/unifi_presence/api/config',
+        '/admin/plugins/unifi_presence/express/api/config',
         Object.assign(context.state.config, { loginRequired: context.state.loginRequired })
       );
       context.commit(mutationTypes.STORE_CONFIG, response.data);
@@ -88,14 +89,14 @@ const actions = {
   },
   async [actionTypes.LOAD_STATS](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/api/stats');
+      const response = await axios.get('/admin/plugins/unifi_presence/express/api/stats');
       context.commit(mutationTypes.STORE_STATS, response.data);
       context.commit(mutationTypes.SET_LOGIN_REQUIRED, false);
     });
   },
   async [actionTypes.LOAD_CLIENTS](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/api/clients');
+      const response = await axios.get('/admin/plugins/unifi_presence/express/api/clients');
       context.commit(mutationTypes.SET_CLIENTS, response.data.clients);
     });
   },
@@ -109,24 +110,25 @@ const actions = {
           return cloned;
         });
 
-      const response = await axios.put('/admin/plugins/unifi_presence/api/config', { clients });
+      const response = await axios.put('/admin/plugins/unifi_presence/express/api/config', { clients });
       context.commit(mutationTypes.SET_CONFIG_CLIENTS, response.data.clients);
     });
   },
   async [actionTypes.RESTART_SERVICE](context) {
     return catchAndHandleError(context, async () => {
-      await axios.post('/admin/plugins/unifi_presence/api/restartService');
+      await axios.post('/admin/plugins/unifi_presence/express/api/restartService');
     });
   },
   async [actionTypes.LOAD_SITES](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/api/sites');
+      const response = await axios.get('/admin/plugins/unifi_presence/express/api/sites');
       context.commit(mutationTypes.SET_SITES, response.data.sites);
     });
   }
 };
 const mutations = {
   [mutationTypes.STORE_CONFIG](state, config) {
+    if (!config.wiredTimeout) config.wiredTimeout = 30;
     state.config = config;
     state.existingClients = config.clients.map((client) => client.mac);
   },
@@ -135,6 +137,10 @@ const mutations = {
       state.version = stats.version;
       state.versionError = stats.versionError;
     }
+    if (stats.deviceType) {
+      state.deviceType = stats.deviceType;
+    }
+
     if (stats.wan && stats.www) {
       state.stats = {
         wan: stats.wan,
@@ -167,6 +173,14 @@ const mutations = {
     });
 
     state.clients = orderBy(clients, ['watched', 'type'], ['desc', 'desc']);
+  },
+  [mutationTypes.SYNC_DEVICE](state, client) {
+    delete client.connected;
+    delete client.ap;
+    const found = state.clients.find((e) => e.mac === client.mac);
+    if (found) {
+      Object.assign(found, client);
+    }
   },
   [mutationTypes.SET_CONFIG_CLIENTS](state, clients) {
     state.config.clients = clients;

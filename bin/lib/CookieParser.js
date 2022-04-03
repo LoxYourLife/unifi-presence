@@ -69,6 +69,7 @@ module.exports = class CookieParser {
   constructor(directories) {
     this.storageFile = `${directories.data}/unifi.cookies.json`;
     this.cookies = {};
+    this.loaded = false;
   }
 
   parseAndAdd(cookies) {
@@ -94,6 +95,10 @@ module.exports = class CookieParser {
     await fileHandle.close();
   }
 
+  async ensureLoad() {
+    if (!this.loaded) await this.load();
+  }
+
   async load() {
     try {
       await fs.promises.access(this.storageFile, fs.constants.R_OK | fs.constants.W_OK);
@@ -113,6 +118,7 @@ module.exports = class CookieParser {
       this.cookies = {};
       await this.save();
     }
+    this.loaded = true;
   }
   async reset() {
     this.cookies = {};
