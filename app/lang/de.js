@@ -49,7 +49,7 @@ export default {
     ANDROID_DEVICE_LINK: 'Hinweise zum Deaktivieren',
     TIMEOUT_OPTIONS: 'Timeout for Kabelgebundene Geräte',
     TIMEOUT_OPTIONS_HINT:
-      'UniFi erkennt selbst nicht ob ein kabelgebudenes Gerät Offline ist nicht. Die Erkennung funktioniert daher so, dass wenn über den hier definierten Zeitraum keine Daten gesendet werden, dass Gerät als Offline angezeigt wird. Es kann sein, dass ein Gerät auch mal eine Minute nichts sendet und kann dann als Ofline geziegt werden obwohl das nicht der Fall ist.'
+      'UniFi erkennt selbst nicht ob ein kabelgebundenes Gerät Offline ist nicht. Die Erkennung funktioniert daher so, dass wenn über den hier definierten Zeitraum keine Daten gesendet werden, dass Gerät als Offline angezeigt wird. Es kann sein, dass ein Gerät auch mal eine Minute nichts sendet und kann dann als Offline geziegt werden obwohl das nicht der Fall ist.'
   },
   SERVICE: {
     WAIT_FOR_CONFIG: 'Konfigurationsfehler, wartet auf Änderungen',
