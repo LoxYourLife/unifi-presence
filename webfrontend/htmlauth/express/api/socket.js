@@ -42,8 +42,6 @@ const onClose = (isClient, ws) => () => {
 const websocket = (_, logger) => (ws, request) => {
   const isClient = _.get(request, 'headers.sec-websocket-protocol', '') === 'webClient';
 
-  logger.info(`new ${isClient ? 'client' : 'server'} connection`);
-
   ws.on('open', onOpen(isClient, ws, logger));
   ws.on('message', onMessage(isClient, ws, logger));
   ws.on('close', onClose(isClient, ws, logger));

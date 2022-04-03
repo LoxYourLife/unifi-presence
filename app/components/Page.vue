@@ -9,11 +9,11 @@
   </div>
   <q-page padding>
     <div class="row">
-      <div class="col-5 col-md-4 col-lg-3 q-pt-md">
+      <div class="desktop-only col-sm-5 col-md-4 col-lg-3 q-pt-md">
         <UnifiController />
       </div>
-      <q-space />
-      <div class="col-6 col-md-7 col-lg-8">
+      <q-space class="desktop-only" />
+      <div class="col-12 col-sm-6 col-md-7 col-lg-8">
         <router-view />
       </div>
     </div>
