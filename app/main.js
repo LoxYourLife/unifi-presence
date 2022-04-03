@@ -10,6 +10,8 @@ import globalStore from './store/global';
 import actionStore from './store/actions';
 
 import de from './lang/de';
+import en from './lang/en';
+import { head } from 'lodash';
 
 const app = createApp(App);
 const router = createRouter({
@@ -17,11 +19,13 @@ const router = createRouter({
   routes
 });
 
+const locale = head((navigator.language || navigator.userLanguage || 'de-DE').split('-'));
 const i18n = createI18n({
-  locale: 'de',
+  locale,
   fallbackLocale: 'en',
   messages: {
-    de
+    de,
+    en
   }
 });
 const store = createStore({

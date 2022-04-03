@@ -12,14 +12,14 @@ export default {
     CONTROLLER: 'UniFi Controller Einstellungen',
     TOPIC: 'MQTT Topic',
     TOPIC_HINT:
-      'Das Mqtt Topic in dem die Werte geschrieben werden sollen. Z.B. UniFi/clients. Kein Slash am Anfang oder Ende und keine Leer- oder Sonderzeichen',
+      'Das Mqtt Topic in dem die Werte geschrieben werden sollen. Z.B. UniFi/clients. Kein Slash am Anfang oder Ende und keine Leer- oder Sonderzeichen. Das Topic wird automatisch abonniert.',
     IP: 'IP Adresse',
     IP_HINT: 'Gebe hier die IP Adresse des UniFi Controllers an. Stelle Sicher, dass Loxberry zugriff darauf hat.',
     USERNAME: 'Benutzername',
     PASSWORD: 'Passwort',
     SITE: 'UniFi Site',
     NEED_MQTT: 'Um dises Plugin nutzen zu können, muss das MQTT Gateway Plugin in der Version >= 2.0.4 installiert sein.',
-    CLIENTS: 'UniFi WiFi Geräte',
+    CLIENTS: 'UniFi Geräte',
     // NO_CLIENTS: 'Geräte konnen noch nicht angezeigt werden. Bitte stelle zunächst eine Verbindung zum UniFi Controller her.',
     CLIENT_SELECTION:
       'Alle selektierten Geräte werden überwacht und an MQTT übermittelt. Alle anderen Geräte werden ignoriert. Um den Status der Geräte zu erhalten, müssen diese Selektiert werden. Es wird automatisch gespeichert.',
@@ -40,12 +40,12 @@ export default {
     UPTIME: 'Aktiv',
     ISP: 'ISP',
     SHOW_WIRED: 'Kabelgebunden anzeigen',
-    SHOW_WIFI: 'Wifi anzeigen',
+    SHOW_WIFI: 'WiFi anzeigen',
     SHOW_OFFLINE: 'Zeige Offline',
     SORT: 'Sortierung',
     SEARCH: 'Suche',
     ANDROID_DEVICES:
-      'Es befinden sich Android Geräte in der Liste. Andoid neigt dazu eine zufällige Mac Adresse zu vergeben. Ist dieses Feature aktiviert, dann kann das Plugin keine eindeutige zuweisung des Gerätes vornehmen und die Erkennung des Gerätes funktioniert nicht. Das müsste dann deaktiviert werden.',
+      'Es befinden sich Android Geräte in der Liste. Android neigt dazu eine zufällige Mac Adresse zu vergeben. Ist dieses Feature aktiviert, dann kann das Plugin keine eindeutige zuweisung des Gerätes vornehmen und die Erkennung des Gerätes funktioniert nicht. Das müsste dann deaktiviert werden.',
     ANDROID_DEVICE_LINK: 'Hinweise zum Deaktivieren',
     TIMEOUT_OPTIONS: 'Timeout for Kabelgebundene Geräte',
     TIMEOUT_OPTIONS_HINT:
@@ -65,7 +65,7 @@ export default {
     STANDARD: 'Standard',
     SELECTED: 'Selektiert',
     NAME: 'Name',
-    SSID: 'Wlan SSID',
+    SSID: 'WiFi SSID',
     EXPERIENCE: 'Erfahrung',
     TYPE: 'Typ'
   },
