@@ -100,7 +100,7 @@ const ping = () => {
 };
 const openSocket = () => {
   try {
-    socket = new ws.WebSocket('ws://localhost:3000/plugins/unifi_presence/api/socket');
+    socket = new ws.WebSocket('ws://localhost:3300/plugins/unifi_presence/api/socket');
     console.log('WS connected');
   } catch (error) {
     console.log('WS Error reconnecting in 5s', error);
