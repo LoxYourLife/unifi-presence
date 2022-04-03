@@ -3,33 +3,77 @@ const axios = require('axios');
 const fs = require('fs');
 const https = require('https');
 const CookieParser = require('./CookieParser');
-const WebSocket = require('ws').WebSocket;
+const errors = require('./errors');
+const wifiSignalPercentage = require('./signalPercentages');
 
-const LOGIN = 'LOGIN';
-const DEVICES = 'DEVICES';
-const HEALTH = 'HEALTH';
-const SYSINFO = 'SYSINFO';
-const ACTIVE_CLIENTS = 'ACTIVE_CLIENTS';
-const HISTORY_CLIENTS = 'HISTORY_CLIENTS';
-const EVENTS = 'EVENTS';
+const { LOGIN, DEVICES, HEALTH, SYSINFO, ACTIVE_CLIENTS, HISTORY_CLIENTS, EVENTS, SITES } = require('./urlTypes');
 
-const convertClient = (client) => ({
-  name: client.display_name || client.name || client.oui || 'unbekannt',
-  mac: client.mac,
-  type: client.type,
-  userId: client.user_id,
-  ip: client.ip,
-  experience: client.wifi_experience_score,
-  ssid: client.essid
-});
+const convertClient = (client) => {
+  const data = {
+    name: client.display_name || client.name || client.oui || 'unbekannt',
+    system: client.oui,
+    mac: client.mac,
+    type: client.type,
+    userId: client.user_id,
+    ip: client.ip
+  };
+  if (client.type === 'WIRELESS') {
+    data.ssid = client.essid;
+    data.experience = client.wifi_experience_score;
+    if (client.signal) {
+      data.signalDbm = client.signal;
+      data.signalPercentage = wifiSignalPercentage[client.signal];
+    } else {
+      data.signalDbm = -100;
+      data.signalPercentage = 0;
+    }
+  }
+  return data;
+};
 
 const convertDevice = (device) => ({
   name: device.name,
   mac: device.mac
 });
 
+const doAndHandleError = async (continuation) => {
+  try {
+    const data = await continuation();
+    return data;
+  } catch (e) {
+    if (_.get(e, 'response.status', 0) === 401) {
+      throw new errors.Unauthorized(JSON.stringify(e.response.data));
+    }
+    if (e.message.indexOf('timeout') !== -1 || e.message.indexOf('EHOSTDOWN') !== -1) {
+      throw new errors.Timeout(e.message);
+    }
+    throw e;
+  }
+};
+
 module.exports = class UniFi {
-  constructor({ config, directories, mqtt }) {
+  constructor({ config, directories }) {
+    this.setConfig(config);
+
+    this.directories = directories;
+
+    this.cookieParser = new CookieParser(directories);
+    this.userFile = `${directories.data}/unifi.user.json`;
+    this.axios = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false
+      }),
+      timeout: 2000
+    });
+
+    this.devices = null;
+  }
+
+  async setup() {
+    return this.cookieParser.ensureLoad();
+  }
+
+  setConfig(config) {
     this.config = config;
 
     if (_.isUndefined(this.config.native)) {
@@ -38,19 +82,6 @@ module.exports = class UniFi {
     if (_.isUndefined(this.config.port)) {
       this.config.port = null;
     }
-
-    this.directories = directories;
-    this.mqtt = mqtt;
-
-    this.cookieParser = new CookieParser(directories);
-    this.userFile = `${directories.data}/unifi.user.json`;
-    this.axios = axios.create({
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false
-      })
-    });
-
-    this.devices = null;
   }
 
   getUrl(type) {
@@ -58,27 +89,29 @@ module.exports = class UniFi {
     const isNative = this.config.native == true;
     const port = !isNative && isPort ? `:${this.config.port}` : '';
     const protocol = type === EVENTS ? 'wss://' : 'https://';
-
+    const site = this.config.site || 'default';
     const url = protocol + this.config.ipaddress + port;
 
     const prefix = isNative && type !== LOGIN ? '/proxy/network' : '';
 
     switch (type) {
       case LOGIN:
-        if (isNative) return url + '/api/auth/login';
-        return url + '/api/login';
+        if (isNative) return `${url}/api/auth/login`;
+        return `${url}/api/login`;
       case EVENTS:
-        return url + prefix + '/wss/s/default/events?clients=v2';
+        return `${url}${prefix}/wss/s/${site}/events?clients=v2`;
       case HEALTH:
-        return url + prefix + '/api/s/default/stat/health';
+        return `${url}${prefix}/api/s/${site}/stat/health`;
       case DEVICES:
-        return url + prefix + '/api/s/default/stat/device';
+        return `${url}${prefix}/api/s/${site}/stat/device`;
       case SYSINFO:
-        return url + prefix + '/api/s/default/stat/sysinfo';
+        return `${url}${prefix}/api/s/${site}/stat/sysinfo`;
       case ACTIVE_CLIENTS:
-        return url + prefix + '/v2/api/site/default/clients/active';
+        return `${url}${prefix}/v2/api/site/${site}/clients/active`;
       case HISTORY_CLIENTS:
-        return url + prefix + '/v2/api/site/default/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24';
+        return `${url}${prefix}/v2/api/site/${site}/clients/history?onlyNonBlocked=true&withinHours=24&withinHours=24`;
+      case SITES:
+        return `${url}${prefix}/api/self/sites`;
       default:
         return null;
     }
@@ -104,8 +137,7 @@ module.exports = class UniFi {
 
     const loginUrl = this.getUrl(LOGIN);
     try {
-      const response = await this.axios.post(loginUrl, data);
-
+      const response = await this.axios.post(loginUrl, data, { timeout: 3000 });
       this.cookieParser.parseAndAdd(response.headers['set-cookie']);
       this.cookieParser.save();
 
@@ -115,66 +147,72 @@ module.exports = class UniFi {
     } catch (e) {
       const twoFaRequired = !_.isUndefined(_.get(e, 'response.data.errors', []).find((text) => /2fa/gi.test(text)));
       const twoFaRequiredOld = _.get(e, 'response.data.meta.msg', '') == 'api.err.Ubic2faTokenRequired';
-      if (_.get(e, 'response, status') === 499 || twoFaRequired || twoFaRequiredOld) {
-        return '2FA';
+      if (_.get(e, 'response.status') === 499 || twoFaRequired || twoFaRequiredOld) {
+        throw new errors.TwoFactorCodeRequired();
+      }
+      if (e.message.indexOf('timeout') !== -1 || e.message.indexOf('EHOSTDOWN') !== -1) {
+        throw new errors.Timeout(e.message);
       }
 
       this.cookieParser.reset();
       fs.writeFileSync(this.userFile, JSON.stringify({}));
 
-      return false;
+      throw new errors.Unauthorized(JSON.stringify(e.response.data));
     }
   }
 
   async health() {
+    await this.setup();
     const url = this.getUrl(HEALTH);
-    try {
+    return doAndHandleError(async () => {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
-      return response.status === 200;
-    } catch (error) {
-      return false;
-    }
+      return response.data;
+    });
   }
 
-  async getVersion() {
+  async getSysinfo() {
+    await this.setup();
     const url = this.getUrl(SYSINFO);
-    try {
+    return doAndHandleError(async () => {
       const response = await this.axios.get(url, { headers: { cookie: this.cookieParser.serialize() } });
-      return _.get(response, 'data.data.0.version', 0);
-    } catch (e) {
-      return 0;
-    }
+      return {
+        version: _.get(response, 'data.data.0.version', 0),
+        deviceType: _.get(response, 'data.data.0.ubnt_device_type', null)
+      };
+    });
   }
 
   async getActiveClients() {
-    try {
+    await this.setup();
+    return doAndHandleError(async () => {
       const activeUrl = this.getUrl(ACTIVE_CLIENTS);
-      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const activeResponse = await this.axios.get(activeUrl, { headers: { cookie: this.cookieParser.serialize() }, timeout: 10000 });
       const historyUrl = this.getUrl(HISTORY_CLIENTS);
-      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() } });
-
+      const historyResponse = await this.axios.get(historyUrl, { headers: { cookie: this.cookieParser.serialize() }, timeout: 10000 });
       return [...activeResponse.data, ...historyResponse.data].map(convertClient);
-    } catch {
-      return [];
-    }
+    });
   }
 
   async getDevices() {
-    try {
+    await this.setup();
+    return doAndHandleError(async () => {
       const deviceUrl = this.getUrl(DEVICES);
-      const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      const response = await this.axios.get(deviceUrl, { headers: { cookie: this.cookieParser.serialize() }, timout: 5000 });
       this.devices = response.data.data.map(convertDevice);
       return this.devices;
-    } catch (e) {
-      return [];
-    }
+    });
   }
 
   async getAccessPoint(mac) {
-    if (this.devices === null) await this.getDevices();
+    await this.setup();
+    let forceLoad = true;
+    if (this.devices === null) {
+      await this.getDevices();
+      forceLoad = false;
+    }
 
     let device = _.find(this.devices, (d) => d.mac === mac);
-    if (_.isNil(device)) {
+    if (_.isNil(device) && forceLoad) {
       await this.getDevices();
       device = _.find(this.devices, (d) => d.mac === mac);
     }
@@ -182,81 +220,13 @@ module.exports = class UniFi {
     return device;
   }
 
-  async openClientEvents(watchedClients) {
-    const url = this.getUrl(EVENTS);
-
-    const ws = new WebSocket(url, {
-      headers: { cookie: this.cookieParser.serialize() },
-      rejectUnauthorized: false
+  async getSites() {
+    await this.setup();
+    return doAndHandleError(async () => {
+      const siteUrl = this.getUrl(SITES);
+      const response = await this.axios.get(siteUrl, { headers: { cookie: this.cookieParser.serialize() } });
+      this.sites = response.data.data.map((site) => ({ value: site.name, label: site.desc }));
+      return this.sites;
     });
-
-    const clients = new Map();
-    watchedClients.forEach((client) => clients.set(client.mac, client));
-
-    ws.on('message', this.handleMessage(clients));
-    ws.on('close', (error) => {
-      console.log('Disconnected');
-      console.log(error);
-
-      setTimeout(() => this.openClientEvents(watchedClients), 5000);
-    });
-  }
-
-  handleMessage(clients) {
-    return (message) => {
-      const event = JSON.parse(message.toString());
-      const data = event.data;
-      const relevantDevices = data.filter((client) => clients.has(client.mac) || clients.has(client.user));
-
-      if (_.isEmpty(relevantDevices)) return;
-
-      switch (event.meta.message) {
-        case 'client:sync':
-          return this.syncMessage(clients, relevantDevices);
-        case 'events':
-          return this.eventMessage(clients, relevantDevices);
-        default:
-          console.log('unhadled event', event);
-          return;
-      }
-    };
-  }
-
-  syncMessage(clients, relevantDevices) {
-    relevantDevices.forEach(async (event) => {
-      const client = clients.get(event.mac);
-      const cloned = _.clone(client);
-
-      client.ap = await this.getAccessPoint(event.ap_mac);
-      client.ssid = event.essid;
-      client.ip = event.ip;
-      client.experience = event.wifi_experience_score;
-      client.connected = !client.connected ? true : client.connected;
-
-      if (!_.isEqual(client, cloned)) this.send(client);
-    });
-  }
-
-  eventMessage(clients, relevantDevices) {
-    relevantDevices.forEach(async (event) => {
-      const client = clients.get(event.user);
-      const cloned = _.clone(client);
-
-      client.ssid = event.ssid;
-      client.ap = await this.getAccessPoint(event.ap);
-
-      if (event.key === 'EVT_WU_Connected') {
-        client.connected = true;
-      } else if (event.key === 'EVT_WU_Disconnected') {
-        client.connected = false;
-      }
-
-      if (!_.isEqual(client, cloned)) this.send(client);
-    });
-  }
-
-  send(client) {
-    const name = client.name.replace(/[^a-z0-9]+/gi, '-').replace(/-+$/, '');
-    this.mqtt.send(`${this.config.topic}/${name}`, JSON.stringify(client));
   }
 };

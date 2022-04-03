@@ -2,7 +2,7 @@ const fs = require('fs');
 const _ = require('lodash');
 
 const parse = (cookies) => {
-  if (_.isArray(cookies)) return cookies.map(parse);
+  if (_.isArray(cookies)) return cookies.flatMap(parse);
   const parts = cookies.split(';');
   const [name, value] = parts
     .shift()
@@ -17,7 +17,7 @@ const parse = (cookies) => {
         path = value;
         break;
       case 'expires':
-        if (null !== value) expires = new Date(value);
+        if (!_.isEmpty(value)) expires = new Date(value);
         break;
       case 'domain':
         domain = value;
@@ -25,7 +25,7 @@ const parse = (cookies) => {
       default:
     }
   });
-  return new Cookie({ name, value: value || '', expires, domain, path });
+  return [new Cookie({ name, value: value || '', expires, domain, path })];
 };
 
 class Cookie {
@@ -69,8 +69,7 @@ module.exports = class CookieParser {
   constructor(directories) {
     this.storageFile = `${directories.data}/unifi.cookies.json`;
     this.cookies = {};
-
-    this.load();
+    this.loaded = false;
   }
 
   parseAndAdd(cookies) {
@@ -89,29 +88,46 @@ module.exports = class CookieParser {
     return _.map(cookies, (cookie) => cookie.serialize()).join('; ');
   }
 
-  save() {
+  async save() {
     const data = JSON.stringify(_.map(this.cookies, (cookie) => cookie.toObject()));
-    fs.writeFileSync(this.storageFile, data);
+    const fileHandle = await fs.promises.open(this.storageFile, 'w+');
+    await fileHandle.writeFile(data, 'UTF-8');
+    await fileHandle.close();
   }
 
-  load() {
-    if (fs.existsSync(this.storageFile)) {
-      const cookies = require(this.storageFile);
+  async ensureLoad() {
+    if (!this.loaded) await this.load();
+  }
+
+  async load() {
+    try {
+      await fs.promises.access(this.storageFile, fs.constants.R_OK | fs.constants.W_OK);
+      const fileHandle = await fs.promises.open(this.storageFile, 'r');
+      const filecontent = await fileHandle.readFile();
+      await fileHandle.close();
+      const cookies = JSON.parse(filecontent);
+
       if (_.isArray(cookies)) {
         const loadedCookies = _.map(cookies, (cookie) => new Cookie(cookie));
         loadedCookies.forEach((cookie) => {
           this.cookies[cookie.name] = cookie;
         });
+        return;
       }
+    } catch {
+      this.cookies = {};
+      await this.save();
     }
+    this.loaded = true;
   }
-  reset() {
+  async reset() {
     this.cookies = {};
-    this.save();
+    return this.save();
   }
 
   isSessionExpired() {
-    const session = _.filter(this.cookies, (cookie) => cookie.name === 'session-id');
+    const session = _.find(this.cookies, (cookie) => cookie.name === 'session-id');
     return _.isNil(session) || session.isExpired();
   }
 };
+module.exports.Cookie = Cookie;

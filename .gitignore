@@ -1,6 +1,8 @@
 
 node_modules
 loxberry
+build
+coverage
 
 data/unifi.*
 #config/unifi.json
