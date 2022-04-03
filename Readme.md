@@ -1,3 +1,7 @@
 # Loxberry UniFi Presence Plugin
 
-This plugin is currently under development. Do not use!
+For documentation check the [Wiki]
+
+[//] # Resources
+
+[Wiki]: https://loxwiki.atlassian.net/wiki/spaces/LOXBERRY/pages/1287454918/UniFi+Pr+senz
