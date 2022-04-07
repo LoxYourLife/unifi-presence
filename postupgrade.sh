@@ -28,7 +28,7 @@ echo "<INFO> Remove temporary folders"
 rm -r $PTEMPL\_upgrade
 
 echo "<INFO> installing dependencies"
-npm --prefix $PHTMLAUTH ci --only=production
+npm --prefix $PHTMLAUTH/express ci --only=production
 npm --prefix $PBIN ci --only=production
 
 
@@ -36,6 +36,6 @@ echo "<INFO> Start Event App"
 npm --prefix $PBIN start
 
 echo "<INFO> Register Plugin at Express Server"
-curl -X POST http://localhost:3300/system/express/plugin/unifi_presence
+curl -X POST http://localhost/admin/express/system/plugin/unifi_presence
 
 exit 0;

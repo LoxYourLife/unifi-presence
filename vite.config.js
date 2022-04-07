@@ -31,13 +31,19 @@ module.exports = defineConfig(({ command, mode }) => {
       }
     },
     server: {
-      base: '/admin/plugins/unifi_presence/',
+      //base: '/admin/express/plugins/unifi_presence/',
       port: 9000,
       proxy: {
-        '/admin/plugins/unifi_presence/express/api': {
-          target: 'http://localhost:3000/',
+        '/admin/express/plugins/unifi_presence/api': {
+          target: 'http://localhost:3300/',
+          changeOrigin: true
+          //rewrite: (path) => console.log(path)
+        },
+        '/express/plugins/unifi_presence/api/socket': {
+          target: 'ws://localhost:3300/',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/admin/, '')
+          ws: true
+          //rewrite: (path) => console.log(path)
         }
       }
     }

@@ -8,12 +8,13 @@ use CGI;
 # it will print an error with the hint that the unifi_presence plugin requires
 # the express plugin.
 
-my $requiredVersion = "0.0.3";
-my $expressData = LoxBerry::System::plugindata("express");
+my $minRequiredVersion = "0.0.4";
+my $unvalidVersion = "0.1.0";
+my $version = LoxBerry::System::pluginversion("express");
 
-if ($expressData && $expressData->{PLUGINDB_VERSION} ge $requiredVersion) {
+if ($version && $version ge $minRequiredVersion && $version lt $unvalidVersion) {
     my $q = CGI->new;
-    print $q->header(-status => 307, -location => 'express/');
+    print $q->header(-status => 307, -location => '/admin/express/plugins/unifi_presence');
     exit(0);
 }
 
@@ -23,7 +24,8 @@ my $template = HTML::Template->new(
     loop_context_vars => 1,
     die_on_bad_params => 0,
 );
-$template->param( REQUIRED_VERSION => $requiredVersion);
+$template->param( REQUIRED_VERSION => $minRequiredVersion);
+$template->param( MAX_VERSION => $unvalidVersion);
 
 %L = LoxBerry::System::readlanguage($template, "language.ini");
 LoxBerry::Web::lbheader("Unifi Presence", "", "");

@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-s,">
+  <div class="q-pa-s">
     <div class="q-gutter-y-md bg-light-green-7">
       <q-tabs inline-label dense class="text-grey-3 bg-light-green-6" active-color="white bg-light-green-7" indicator-color="light-green-9" align="justify">
         <q-route-tab name="mails" :to="{name: 'settings'}" icon="settings" :label="$t('UNIFI.SETTINGS')" data-role="none" />

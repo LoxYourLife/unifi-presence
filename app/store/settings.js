@@ -69,10 +69,12 @@ const catchAndHandleError = async (context, executable) => {
   }
 };
 
+const url = (endpoint) => `/admin/express/plugins/unifi_presence/api/${endpoint}`;
+
 const actions = {
   async [actionTypes.LOAD_CONFIG](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/express/api/config');
+      const response = await axios.get(url('config'));
       context.commit(mutationTypes.STORE_CONFIG, response.data);
     });
   },
@@ -80,23 +82,20 @@ const actions = {
     context.commit(mutationTypes.HIDE_TWO_FACTOR);
     context.commit(mutationTypes.SET_LOGIN_ERROR, false);
     return catchAndHandleError(context, async () => {
-      const response = await axios.put(
-        '/admin/plugins/unifi_presence/express/api/config',
-        Object.assign(context.state.config, { loginRequired: context.state.loginRequired })
-      );
+      const response = await axios.put(url('config'), Object.assign(context.state.config, { loginRequired: context.state.loginRequired }));
       context.commit(mutationTypes.STORE_CONFIG, response.data);
     });
   },
   async [actionTypes.LOAD_STATS](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/express/api/stats');
+      const response = await axios.get(url('stats'));
       context.commit(mutationTypes.STORE_STATS, response.data);
       context.commit(mutationTypes.SET_LOGIN_REQUIRED, false);
     });
   },
   async [actionTypes.LOAD_CLIENTS](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/express/api/clients');
+      const response = await axios.get(url('clients'));
       context.commit(mutationTypes.SET_CLIENTS, response.data.clients);
     });
   },
@@ -110,18 +109,18 @@ const actions = {
           return cloned;
         });
 
-      const response = await axios.put('/admin/plugins/unifi_presence/express/api/config', { clients });
+      const response = await axios.put(url('config'), { clients });
       context.commit(mutationTypes.SET_CONFIG_CLIENTS, response.data.clients);
     });
   },
   async [actionTypes.RESTART_SERVICE](context) {
     return catchAndHandleError(context, async () => {
-      await axios.post('/admin/plugins/unifi_presence/express/api/restartService');
+      await axios.post(url('restartService'));
     });
   },
   async [actionTypes.LOAD_SITES](context) {
     return catchAndHandleError(context, async () => {
-      const response = await axios.get('/admin/plugins/unifi_presence/express/api/sites');
+      const response = await axios.get(url('sites'));
       context.commit(mutationTypes.SET_SITES, response.data.sites);
     });
   }

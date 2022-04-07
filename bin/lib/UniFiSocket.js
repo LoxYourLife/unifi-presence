@@ -120,6 +120,8 @@ module.exports = class UniFiSocket extends UniFi {
     await relevantDevices.forEach(async (event) => {
       const isWireless = event.type === 'WIRELESS';
       const client = this.clients.get(event.mac);
+      if (_.isUndefined(client)) return;
+
       const cloned = _.clone(client);
       const wiredTimeout = (this.config.wiredTimeout || 30) * 1000;
       client.ap = await this.getAccessPoint(event.ap_mac || event.gw_mac);
@@ -160,6 +162,7 @@ module.exports = class UniFiSocket extends UniFi {
   async eventMessage(relevantDevices) {
     await relevantDevices.forEach(async (event) => {
       const client = this.clients.get(event.user);
+      if (_.isUndefined(client)) return;
       const cloned = _.clone(client);
 
       if (event.key === ['EVT_WU_Connected', 'EVT_LU_Connected'].includes(event.key)) {

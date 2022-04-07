@@ -32,16 +32,14 @@ fs.watch(configFile, {}, () => {
     console.log('load new config');
     uniFi.setConfig(config);
   } catch {
-    console.log('error while reading changed config');
+    //
   }
 });
 
 const waitForCookieChange = async () => {
-  console.log('wait for cookie change');
   return new Promise((resolve) => fs.watch(cookieFile, { persistent: false }, resolve));
 };
 const waitForConfigChange = async (file) => {
-  console.log(`wait for config change of ${file}`);
   return new Promise((resolve) => fs.watch(file, { persistent: false }, resolve));
 };
 
@@ -58,7 +56,6 @@ const sendStatus = (status) => {
 };
 
 const listenToEvents = async () => {
-  console.log('start listening to events');
   try {
     await uniFi.setup();
     await uniFi.getSysinfo();
@@ -80,14 +77,13 @@ const listenToEvents = async () => {
       return waitForCookieChange();
     } else if (error instanceof Disconnected) {
       sendStatus(states.DISCONNECTED);
-      console.log('Connection lost, retry in 5 seconds');
       return new Promise((resolve) => setTimeout(resolve, 5000));
     } else if (error.message.indexOf('ENETUNREACH') != -1) {
       sendStatus(states.DISCONNECTED);
       console.log('No Network, retry in 10 seconds');
       return new Promise((resolve) => setTimeout(resolve, 10000));
     }
-    console.error(error);
+
     sendStatus(states.WAIT_FOR_CONFIG);
     return waitForConfigChange(configFile);
   }
@@ -100,10 +96,8 @@ const ping = () => {
 };
 const openSocket = () => {
   try {
-    socket = new ws.WebSocket('ws://localhost:3300/plugins/unifi_presence/api/socket');
-    console.log('WS connected');
+    socket = new ws.WebSocket('ws://localhost/express/plugins/unifi_presence/api/socket');
   } catch (error) {
-    console.log('WS Error reconnecting in 5s', error);
     socket = null;
     setTimeout(openSocket, 5000);
     return;
@@ -114,7 +108,6 @@ const openSocket = () => {
   });
   socket.on('message', (message) => {
     if (message.toString() === 'pong') return;
-    console.log('WS got message:', message.toString('Utf-8'));
   });
 
   const onClose = () => {
@@ -125,12 +118,9 @@ const openSocket = () => {
     setTimeout(openSocket, 2000);
   };
 
-  socket.on('close', () => {
-    console.log('WS Disconnected');
-    onClose();
-  });
+  socket.on('close', onClose);
   socket.on('error', (error) => {
-    console.log('Express socket returned error', error);
+    //console.log('Express socket returned error', error);
   });
 
   uniFi.setSocket(socket);

@@ -22,8 +22,6 @@ PBIN=$LBPBIN/$PDIR
 
 echo "<INFO> installing bin dependencies"
 npm --prefix $PBIN ci --only=production
-
-echo "<INFO> copy .htaccess"
-cp webfrontend/htmlauth/express/.htaccess $PHTMLAUTH/express/.htaccess
+npm --prefix $PHTMLAUTH/express ci --only=production
 
 exit 0;

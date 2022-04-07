@@ -88,10 +88,9 @@ const createServer = async () => {
     };
     await plugin(req, res, next);
   };
-  app.use('/plugins/unifi_presence/express', pluginRenderer);
-  app.use('/plugins/unifi_presence', pluginRenderer);
-  app.use('/plugins/unifi_presence', express.static(path.resolve(__dirname, '../webfrontend/htmlauth/')));
-
+  app.use('/admin/express/plugins/unifi_presence/', pluginRenderer);
+  app.use('/express/plugins/unifi_presence/', pluginRenderer);
+  app.get('/', pluginRenderer);
   app.get('*', (req, res, next) => {
     if (req.ws) return next();
     logger.info(`ACCESS 404 ${req.method} ${req.url}`);
