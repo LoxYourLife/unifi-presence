@@ -8,11 +8,9 @@ on:
       # and https://docs.npmjs.com/about-semantic-versioning
 
 jobs:
-  
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: publish
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
