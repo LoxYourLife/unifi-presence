@@ -8,8 +8,8 @@ use CGI;
 # it will print an error with the hint that the unifi_presence plugin requires
 # the express plugin.
 
-my $minRequiredVersion = "0.1.0";
-my $unvalidVersion = "0.2.0";
+my $minRequiredVersion = "1.0.0";
+my $unvalidVersion = "2.0.0";
 my $version = LoxBerry::System::pluginversion("express");
 
 if ($version && $version ge $minRequiredVersion && $version lt $unvalidVersion) {
