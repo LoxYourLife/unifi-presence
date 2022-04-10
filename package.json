@@ -17,7 +17,13 @@
     "dev:events": "LBHOMEDIR=$(pwd)/loxberry nodemon -w bin bin/index.js --dev events",
     "lint": "eslint bin",
     "prettify": "prettier --write bin",
-    "zip": "rm -f unifi_presence.zip && zip -r unifi_presence.zip . -x \".git/*\" -x \"node_modules/*\" -x \"loxberry/*\" -x \"data/*\" -x \"coverage/*\" -x \"build/*\" -x \"bin/node_modules/*\""
+    "zip": "rm -f unifi_presence.zip && zip -r unifi_presence.zip . -x \".git/*\" -x \"node_modules/*\" -x \"loxberry/*\" -x \"data/*\" -x \"coverage/*\" -x \"build/*\" -x \"bin/node_modules/*\"",
+    "release:major": "npm run build && changelog -M -a && node .github/release.js major false",
+    "release:minor": "npm run build && changelog -m -a && node .github/release.js minor false",
+    "release:patch": "npm run build && changelog -p -a && node .github/release.js patch false",
+    "pre:major": "npm run build && changelog -M -a && node .github/release.js major true",
+    "pre:minor": "npm run build && changelog -m -a && node .github/release.js minor true",
+    "pre:patch": "npm run build && changelog -p -a && node .github/release.js patch true"
   },
   "type": "commonjs",
   "author": "Ronald Marske",
@@ -39,6 +45,7 @@
     "express": "4.17.3",
     "express-fileupload": "1.3.1",
     "express-handlebars": "6.0.4",
+    "generate-changelog": "1.8.0",
     "i18next": "21.6.14",
     "jayson": "3.6.6",
     "jest": "27.5.1",
@@ -51,6 +58,7 @@
     "nodemon": "2.0.15",
     "prettier": "2.4.0",
     "quasar": "2.6.5",
+    "read-ini-file": "3.0.1",
     "sass": "1.50.0",
     "supertest": "6.2.2",
     "vite": "2.9.1",
@@ -58,6 +66,7 @@
     "vue-i18n": "9.1.9",
     "vue-router": "4.0.14",
     "vuex": "4.0.2",
+    "write-ini-file": "3.0.2",
     "ws": "8.5.0"
   }
 }
