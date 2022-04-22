@@ -10,16 +10,27 @@ module.exports = class Mqtt {
     this.config = _.get(globalConfig, 'Mqtt', null);
   }
 
-  connect() {
+  async connect() {
     if (!this.config || !this.config.Brokerhost || !this.config.Brokerport || !this.config.Brokeruser || !this.config.Brokerpass) {
       throw new Error('Cant connect to MQTT. Configuration is missing');
     }
     const connectUrl = `mqtt://${this.config.Brokerhost}:${this.config.Brokerport}`;
-    this.client = mqtt.connect(connectUrl, {
-      username: this.config.Brokeruser,
-      password: this.config.Brokerpass,
-      clientId: 'UniFiPresence'
-    });
+
+    return new Promise(
+      function (resolve) {
+        this.client = mqtt.connect(connectUrl, {
+          username: this.config.Brokeruser,
+          password: this.config.Brokerpass,
+          clientId: 'UniFiPresence',
+          keepalive: 300,
+          reconnectPeriod: 0,
+          queueQoSZero: false
+        });
+
+        this.client.on('connect', resolve);
+        this.client.on('packetreceive', () => {});
+      }.bind(this)
+    );
   }
 
   disconnect() {

@@ -119,9 +119,7 @@ const openSocket = () => {
   };
 
   socket.on('close', onClose);
-  socket.on('error', (error) => {
-    //console.log('Express socket returned error', error);
-  });
+  socket.on('error', () => {});
 
   uniFi.setSocket(socket);
 };
@@ -135,15 +133,21 @@ const hasMqttInstalled = async () => {
     return hasMqttInstalled();
   }
   mqtt.setConfig(globalConfig);
-  mqtt.connect();
+  await mqtt.connect();
   return true;
 };
 
+
 const eventLoop = async () => {
-  openSocket();
-  await hasMqttInstalled();
   await listenToEvents();
   await eventLoop();
 };
 
-eventLoop();
+const main = async () => {
+  openSocket();
+  await hasMqttInstalled();
+  await eventLoop();
+};
+
+main();
+
