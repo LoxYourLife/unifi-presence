@@ -1,3 +1,9 @@
+#### 2.1.2 (2022-04-22)
+
+##### Other Changes
+
+* **fix:**  issue with reconnecting mqtt client (bde14001)
+
 ### 2.1.0 (2022-04-10)
 
 ##### Other Changes (type)
