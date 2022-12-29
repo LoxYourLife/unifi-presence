@@ -91,7 +91,7 @@ import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import actionStore from '../store/actions';
 import { lowerCase, orderBy } from 'lodash';
-import { useI18n } from 'vue-i18n/index';
+import { useI18n } from 'vue-i18n';
 
 export default {
   name: 'Clients',

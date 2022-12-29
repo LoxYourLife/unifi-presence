@@ -44,8 +44,8 @@
 
 const prompts = require('prompts');
 
-const readIniFile = require('read-ini-file');
-const writeIniFile = require('write-ini-file');
+const { readIniFile } = require('read-ini-file');
+const { writeIniFile } = require('write-ini-file');
 const path = require('path');
 const { execSync } = require('child_process');
 

@@ -8,3 +8,4 @@ coverage
 data/unifi.*
 #config/unifi.json
 unifi_presence.zip
+bin/.pm2

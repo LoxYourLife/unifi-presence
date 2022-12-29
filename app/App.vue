@@ -12,6 +12,11 @@
 @import 'quasar/src/css/index.sass'
 @import '@quasar/extras/fontawesome-v6/fontawesome-v6.css'
 
+/* Loxberry 3 Layout fix */
+#main1 .ui-header .container > .column
+  flex-direction: inherit
+  display: block
+
 #app .ui-btn
   margin-bottom: 0
   width: auto

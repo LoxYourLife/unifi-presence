@@ -61,7 +61,7 @@ div.q-toggle__label {
 <script>
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
-import { useI18n } from 'vue-i18n/index';
+import { useI18n } from 'vue-i18n';
 import actionStore from '../store/actions';
 import validationRules from '../utils/validationRules';
 
@@ -69,7 +69,7 @@ export default {
   name: 'Settings',
   components: {},
   setup() {
-    const { t } = useI18n({ useScope: 'global' });
+    const { t } = useI18n();
     const store = useStore();
     store.dispatch(actionStore.actionTypes.LOAD_SETTINGS);
 

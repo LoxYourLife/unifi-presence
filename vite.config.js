@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import path from 'path';
-import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
+import { resolve } from 'path';
+import { quasar } from '@quasar/vite-plugin';
 
 module.exports = defineConfig(({ command, mode }) => {
   const isProduction = mode === 'production';
@@ -11,12 +11,12 @@ module.exports = defineConfig(({ command, mode }) => {
     write: false,
     plugins: [vue(), quasar({ sassVariables: 'app/quasar.extras.sass', autoImportComponentCase: 'combined' })],
     build: {
-      outDir: path.resolve(__dirname, 'build'),
+      outDir: resolve(__dirname, 'build'),
       assetsDir: 'assets',
       emptyOutDir: true,
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'app/build.html')
+          main: resolve(__dirname, 'app/build.html')
         },
         // make sure to externalize deps that shouldn't be bundled
         // into your library
@@ -35,12 +35,12 @@ module.exports = defineConfig(({ command, mode }) => {
       port: 9000,
       proxy: {
         '/admin/express/plugins/unifi_presence/api': {
-          target: 'http://localhost:3300/',
+          target: 'http://127.0.0.1:3300',
           changeOrigin: true
           //rewrite: (path) => console.log(path)
         },
         '/express/plugins/unifi_presence/api/socket': {
-          target: 'ws://localhost:3300/',
+          target: 'ws://127.0.0.1:3300/',
           changeOrigin: true,
           ws: true
           //rewrite: (path) => console.log(path)

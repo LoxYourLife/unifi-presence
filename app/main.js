@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import { createI18n } from 'vue-i18n/index';
+import { createI18n } from 'vue-i18n';
 import { createStore } from 'vuex';
 import App from './App.vue';
 import { createRouter, createWebHistory } from 'vue-router';
@@ -23,6 +23,7 @@ const locale = head((navigator.language || navigator.userLanguage || 'de-DE').sp
 const i18n = createI18n({
   locale,
   fallbackLocale: 'en',
+  legacy: false,
   messages: {
     de,
     en

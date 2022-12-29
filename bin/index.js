@@ -69,12 +69,18 @@ const listenToEvents = async () => {
         return login;
       } catch (loginError) {
         if (loginError instanceof TwoFactorCodeRequired) {
-          return waitForCookieChange();
+          const retry = new Promise((resolve) => setTimeout(resolve, 180000));
+          const waitForChange = waitForCookieChange();
+
+          return Promise.race([retry, waitForChange]);
         }
       }
     } else if (error instanceof Unauthorized && config.twoFaEnabled) {
       sendStatus(states.UNAUTHORIZED);
-      return waitForCookieChange();
+      const retry = new Promise((resolve) => setTimeout(resolve, 180000));
+      const waitForChange = waitForCookieChange();
+
+      return Promise.race([retry, waitForChange]);
     } else if (error instanceof Disconnected) {
       sendStatus(states.DISCONNECTED);
       return new Promise((resolve) => setTimeout(resolve, 5000));
@@ -137,7 +143,6 @@ const hasMqttInstalled = async () => {
   return true;
 };
 
-
 const eventLoop = async () => {
   await listenToEvents();
   await eventLoop();
@@ -150,4 +155,3 @@ const main = async () => {
 };
 
 main();
-

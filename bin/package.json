@@ -7,6 +7,7 @@
     "lib": "lib"
   },
   "scripts": {
+    "dev": "nodemon -w ./ index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "PM2_HOME=$(pwd)/.pm2 pm2 start unifi.config.js",
     "stop": "PM2_HOME=$(pwd)/.pm2 pm2 stop unifi.config.js",
@@ -15,13 +16,13 @@
     "restart": "PM2_HOME=$(pwd)/.pm2 pm2 restart unifi.config.js"
   },
   "dependencies": {
-    "axios": "0.26.1",
-    "follow-redirects": ">=1.14.8",
+    "axios": "1.2.2",
+    "follow-redirects": "1.15.2",
     "lodash": "4.17.21",
-    "minimist": ">=1.2.6",
+    "minimist": "1.2.7",
     "mqtt": "4.3.7",
-    "pm2": "5.2.0",
-    "ws": "8.5.0"
+    "pm2": "5.2.2",
+    "ws": "8.11.0"
   },
   "author": "",
   "license": "ISC"
