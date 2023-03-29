@@ -88,6 +88,10 @@ const listenToEvents = async () => {
       sendStatus(states.DISCONNECTED);
       console.log('No Network, retry in 10 seconds');
       return new Promise((resolve) => setTimeout(resolve, 10000));
+    } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_BAD_REQUEST') {
+      sendStatus(states.DISCONNECTED);
+      console.log('Unifi Controller not reachable, retry in 10 seconds');
+      return new Promise((resolve) => setTimeout(resolve, 10000));
     }
 
     sendStatus(states.WAIT_FOR_CONFIG);
