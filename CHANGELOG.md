@@ -1,3 +1,7 @@
+#### 3.0.1 (2023-04-01)
+
+**fix:** issue with losing connection after restart
+
 ## 3.0.0 (2022-12-29)
 
 * **feat**
