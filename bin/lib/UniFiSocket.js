@@ -130,7 +130,7 @@ module.exports = class UniFiSocket extends UniFi {
       if (isWireless) {
         client.ssid = event.essid;
         client.experience = event.wifi_experience_score;
-        client.connected = !client.connected ? true : client.connected;
+        client.connected = (!event.status || event.status === 'online') && !_.isNil(event.ap_mac);
 
         if (event.signal && client.connected) {
           client.signalDbm = event.signal;
