@@ -62,7 +62,9 @@ module.exports = class UniFiSocket extends UniFi {
       } catch (e) {
         return reject(e);
       }
-      this.pingInterval = setInterval(() => this.socket.send('ping'), 20000);
+      // A text 'ping' makes UniFi Network close the socket with 1002 every few minutes.
+      this.pingInterval = setInterval(() => this.socket.ping(), 20000);
+      this.socket.on('pong', () => this.handleMessage('pong'));
       this.socket.on('message', this.handleMessage.bind(this));
       const onClose = (error) => {
         console.log('Socket connection closed', error);
