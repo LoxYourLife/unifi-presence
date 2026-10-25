@@ -64,6 +64,7 @@ module.exports = class UniFiSocket extends UniFi {
       }
       this.pingInterval = setInterval(() => this.socket.send('ping'), 20000);
       this.socket.on('message', this.handleMessage.bind(this));
+      this.socket.on('open', () => this.publishPluginStatus());
       const onClose = (error) => {
         console.log('Socket connection closed', error);
         clearTimeout(this.pingTimeout);
@@ -77,6 +78,17 @@ module.exports = class UniFiSocket extends UniFi {
       this.socket.on('error', onClose);
       this.socket.on('close', onClose);
     });
+  }
+
+  // Lets consumers (e.g. Loxone) block presence logic right after a restart or reconnect.
+  publishPluginStatus() {
+    const base = this.config.topic.replace(/\/[^/]*$/, '');
+    const now = String(Math.round(Date.now() / 1000));
+    if (!this.startPublished) {
+      this.mqtt.send(`${base}/plugin/start`, now);
+      this.startPublished = true;
+    }
+    this.mqtt.send(`${base}/plugin/connected`, now);
   }
 
   handleMessage(message) {
@@ -134,6 +146,7 @@ module.exports = class UniFiSocket extends UniFi {
 
         if (event.signal && client.connected) {
           client.signalDbm = event.signal;
+          client.lastSignalDbm = event.signal;
           client.signalPercentage = wifiSignalPercentage[event.signal];
         } else {
           client.signalDbm = -100;
