@@ -165,7 +165,7 @@ module.exports = class UniFiSocket extends UniFi {
       if (_.isUndefined(client)) return;
       const cloned = _.clone(client);
 
-      if (event.key === ['EVT_WU_Connected', 'EVT_LU_Connected'].includes(event.key)) {
+      if (['EVT_WU_Connected', 'EVT_LU_Connected'].includes(event.key)) {
         client.connected = true;
         if (client.type === 'WIRELESS') {
           client.ssid = event.ssid;
