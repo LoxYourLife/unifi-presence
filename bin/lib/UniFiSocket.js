@@ -3,7 +3,7 @@ const _ = require('lodash');
 const ws = require('ws');
 const errors = require('./errors');
 const wifiSignalPercentage = require('./signalPercentages');
-const { EVENTS } = require('./urlTypes');
+const { EVENTS, ACTIVE_CLIENTS } = require('./urlTypes');
 
 const convertClients = (clients) => new Map(clients.map((client) => [client.mac, client]));
 
@@ -64,6 +64,7 @@ module.exports = class UniFiSocket extends UniFi {
       }
       this.pingInterval = setInterval(() => this.socket.send('ping'), 20000);
       this.socket.on('message', this.handleMessage.bind(this));
+      this.socket.on('open', () => this.publishOfflineClients());
       const onClose = (error) => {
         console.log('Socket connection closed', error);
         clearTimeout(this.pingTimeout);
@@ -77,6 +78,32 @@ module.exports = class UniFiSocket extends UniFi {
       this.socket.on('error', onClose);
       this.socket.on('close', onClose);
     });
+  }
+
+  // After (re)connecting, clients that are offline never get an event,
+  // so publish them as disconnected instead of keeping the last known state.
+  async publishOfflineClients() {
+    try {
+      const response = await this.axios.get(this.getUrl(ACTIVE_CLIENTS), {
+        headers: { cookie: this.cookieParser.serialize() },
+        timeout: 10000
+      });
+      // Disconnected wireless sessions stay in the active list for a while, but without ap_mac.
+      const active = new Set(
+        response.data.filter((client) => client.type !== 'WIRELESS' || !_.isNil(client.ap_mac)).map((client) => client.mac)
+      );
+      this.clients.forEach((client, mac) => {
+        if (client.type !== 'WIRELESS' || active.has(mac) || client.connected === false) return;
+        client.connected = false;
+        client.signalDbm = -100;
+        client.signalPercentage = 0;
+        client.ssid = null;
+        this.send(client);
+        this.clients.set(mac, client);
+      });
+    } catch (e) {
+      console.log('Could not publish offline clients', e.message);
+    }
   }
 
   handleMessage(message) {
